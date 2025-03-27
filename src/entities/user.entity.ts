@@ -4,8 +4,10 @@ import {
   BeforeUpdate,
   Column,
   Entity,
+  OneToMany,
   PrimaryGeneratedColumn,
 } from "typeorm";
+import { Document } from "./document.entity";
 
 @Entity("users")
 export class User {
@@ -23,6 +25,11 @@ export class User {
 
   @Column({ default: false })
   admin: boolean;
+
+  @OneToMany(() => Document, (d) => d.user, {
+    onDelete: "CASCADE",
+  })
+  documents: Array<Document>;
 
   @BeforeInsert()
   @BeforeUpdate()
