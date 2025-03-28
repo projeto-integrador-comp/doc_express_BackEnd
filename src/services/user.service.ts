@@ -1,6 +1,10 @@
-import { TUserCreate, TUserReturn } from "../interfaces/user.interface";
+import {
+  TUserCreate,
+  TUserList,
+  TUserReturn,
+} from "../interfaces/user.interface";
 import { userRepository } from "../repositories";
-import { userReturnSchema } from "../schemas/user.schema";
+import { userListSchema, userReturnSchema } from "../schemas/user.schema";
 
 export class UserService {
   async create(data: TUserCreate): Promise<TUserReturn> {
@@ -8,5 +12,10 @@ export class UserService {
     await userRepository.save(newUser);
 
     return userReturnSchema.parse(newUser);
+  }
+
+  async read(): Promise<TUserList> {
+    const users = await userRepository.find();
+    return userListSchema.parse(users);
   }
 }

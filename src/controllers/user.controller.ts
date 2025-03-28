@@ -11,4 +11,9 @@ export class UserController {
 
     return res.status(201).json(newUser);
   }
+
+  async read(req: Request, res: Response) {
+    const users = await this.userService.read();
+    return res.json(users);
+  }
 }
