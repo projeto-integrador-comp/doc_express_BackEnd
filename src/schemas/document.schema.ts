@@ -4,7 +4,7 @@ export const documentSchema = z.object({
   id: z.string(),
   submissionDate: z.string(),
   documentName: z.string().max(50).min(2),
-  note: z.string(),
+  note: z.string().max(50),
 });
 
 export const documentCreateSchema = z.object({
@@ -18,9 +18,10 @@ export const documentCreateSchema = z.object({
       },
       { message: "Invalid Date." }
     )
-    .transform((data) => new Date(data)),
+    .transform((date) => new Date(date))
+    .transform((date) => date.toISOString()),
   documentName: z.string().max(50).min(2),
-  note: z.string().default(""),
+  note: z.string().max(50).default(""),
 });
 
 export const documentListSchema = documentSchema.array();

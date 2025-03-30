@@ -1,5 +1,4 @@
-import { AppError } from "../errors/AppError.error";
-import { TLoginRequest, TLoginReturn } from "../interfaces/login.interface";
+import { TLoginRequest } from "../interfaces/login.interface";
 import { userRepository } from "../repositories";
 import { sign } from "jsonwebtoken";
 import { loginReturnSchema } from "../schemas/login.schema";
