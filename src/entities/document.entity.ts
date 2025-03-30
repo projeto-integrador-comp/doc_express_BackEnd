@@ -12,7 +12,7 @@ export class Document {
   @Column({ length: 50 })
   documentName: string;
 
-  @Column({ length: 50 })
+  @Column({ length: 50, default: "" })
   note: string;
 
   @ManyToOne(() => User, (u) => u.documents, {
