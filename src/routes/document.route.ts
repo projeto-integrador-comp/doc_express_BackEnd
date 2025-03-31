@@ -15,3 +15,6 @@ documentRouter.post(
     documentController.create(req, res);
   }
 );
+documentRouter.get("/", (req: Request, res: Response) => {
+  documentController.read(req, res);
+});

@@ -9,4 +9,11 @@ export class DocumentController {
     const newDocument = await this.documentService.create(req.body, foundUser);
     return res.status(201).json(newDocument);
   }
+
+  async read(req: Request, res: Response) {
+    const { foundUser } = res.locals;
+    const documents = await this.documentService.read(foundUser);
+
+    return res.json(documents);
+  }
 }
