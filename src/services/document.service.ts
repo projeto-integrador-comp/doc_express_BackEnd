@@ -3,11 +3,13 @@ import {
   TDocument,
   TDocumentCreate,
   TDocumentList,
+  TDocumentUpdate,
 } from "../interfaces/document.interface";
 import { documentRepository } from "../repositories";
 import {
   documentListSchema,
   documentReturnSchema,
+  documentSchema,
 } from "../schemas/document.schema";
 
 export class DocumentService {
@@ -22,5 +24,16 @@ export class DocumentService {
     const documents = await documentRepository.find({ where: { user } });
 
     return documentListSchema.parse(documents);
+  }
+
+  async update(document: Document, data: TDocumentUpdate): Promise<TDocument> {
+    const documentUpdated = documentRepository.create({ ...document, ...data });
+    await documentRepository.save(documentUpdated);
+
+    const { submissionDate } = data;
+
+    if (submissionDate) return documentReturnSchema.parse(documentUpdated);
+
+    return documentSchema.parse(documentUpdated);
   }
 }

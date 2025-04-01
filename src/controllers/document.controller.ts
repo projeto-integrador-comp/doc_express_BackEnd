@@ -16,4 +16,14 @@ export class DocumentController {
 
     return res.json(documents);
   }
+
+  async update(req: Request, res: Response) {
+    const { foundDocument } = res.locals;
+    const documentUpdated = await this.documentService.update(
+      foundDocument,
+      req.body
+    );
+
+    return res.json(documentUpdated);
+  }
 }
