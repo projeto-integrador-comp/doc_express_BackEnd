@@ -25,13 +25,13 @@ SECRET_KEY="chaveAleatoria"
 npm run typeorm migration:run -- -d src/data-source
 ```
 
-4. Para Rodar a aplicação utilize o comando abaixo:
+4. Para inicializar a aplicação utilize o comando abaixo:
 
 ```shell
 npm run dev
 ```
 
-Após Rodar a aplicalção a API poderá ser acessada localmente a partir da URL:
+Após inicializar a aplicalção a API poderá ser acessada localmente a partir da URL:
 http://localhost:3000
 
 <h1 align = center>Endpoints da aplicação</h1>
@@ -52,7 +52,7 @@ Rota de login de usuário
 ```json
 {
   "password": "1234",
-  "email": "usuario@mail.com"
+  "email": "usuarioComum@mail.com"
 }
 ```
 
@@ -63,13 +63,26 @@ Rota de login de usuário
 
 ```json
 {
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZG1pbiI6dHJ1ZSwiaWF0IjoxNzQzMjY5MDg2LCJleHAiOjE3NDMyNzk4ODYsInN1YiI6ImIwOWY4OWQ5LWRmNDctNGVhZi1iM2I1LTAxZTRkY2Q0ZjUxOCJ9.el-3lQkezRutzFudIq6CdVEb60AY3jIGQt48bgK3NwM",
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZG1pbiI6ZmFsc2UsImlhdCI6MTc0MzUzMDA4NSwiZXhwIjoxNzQzNTQwODg1LCJzdWIiOiIzOTExZWM2Ni01ODUzLTQzYzAtYTNjMC1hZWVhZGYyYWI1ZDcifQ.JpJyBh0VTOC4PtUEsASEKGrZokKbUs_xUSx6EjPj0k0",
   "user": {
-    "id": "b09f89d9-df47-4eaf-b3b5-01e4dcd4f518",
-    "name": "Usuário",
-    "email": "usuario@mail.com",
-    "admin": true,
-    "documents": []
+    "id": "3911ec66-5853-43c0-a3c0-aeeadf2ab5d7",
+    "name": "Usuário Comum",
+    "email": "usuarioComum@mail.com",
+    "admin": false,
+    "documents": [
+      {
+        "id": "1d20d60d-c712-4268-9f38-7a997c4b00ec",
+        "submissionDate": "2025-05-31T00:00:00.000Z",
+        "documentName": "Documento 1",
+        "note": ""
+      },
+      {
+        "id": "55f521d1-dc07-4406-bce9-4dab1db57919",
+        "submissionDate": "2026-08-31T00:00:00.000Z",
+        "documentName": "Documento 2",
+        "note": "entregar para o funcionário"
+      }
+    ]
   }
 }
 ```
@@ -122,11 +135,24 @@ Rota de informações do usuário
 ```json
 {
   "user": {
-    "id": "b09f89d9-df47-4eaf-b3b5-01e4dcd4f518",
-    "name": "Usuário",
-    "email": "usuario@mail.com",
-    "admin": true,
-    "documents": []
+    "id": "3911ec66-5853-43c0-a3c0-aeeadf2ab5d7",
+    "name": "Usuário Comum",
+    "email": "usuarioComum@mail.com",
+    "admin": false,
+    "documents": [
+      {
+        "id": "1d20d60d-c712-4268-9f38-7a997c4b00ec",
+        "submissionDate": "2025-05-31T00:00:00.000Z",
+        "documentName": "Documento 1",
+        "note": ""
+      },
+      {
+        "id": "55f521d1-dc07-4406-bce9-4dab1db57919",
+        "submissionDate": "2026-08-31T00:00:00.000Z",
+        "documentName": "Documento 2",
+        "note": "entregar para o funcionário"
+      }
+    ]
   }
 }
 ```
@@ -276,8 +302,9 @@ Rota de listagem de usuários
 
 ```json
 {
-  // Rsposta de usuário não admin
   "message": "Insufficient permission."
+
+  // Resposta de usuário não admin
 }
 ```
 
@@ -322,8 +349,9 @@ Rota de listagem de usuário pelo id
 
 ```json
 {
-  // Rsposta de usuário não admin
   "message": "Insufficient permission."
+
+  // Resposta de usuário não admin
 }
 ```
 
@@ -349,10 +377,11 @@ Atualização de usuário
 
 ```json
 {
-  "name": "User4",
+  "name": "Usário 4",
   "password": "12345",
-  "email": "user4@mail.com"
-  // o campo "admin não pode ser alterado
+  "email": "usuario4@mail.com"
+
+  // o campo "admin" não pode ser alterado
 }
 ```
 
@@ -364,9 +393,20 @@ Atualização de usuário
 ```json
 {
   "id": "4a731054-9ec0-4e07-a309-f7112118a122",
-  "name": "User4",
-  "email": "user4@mail.com",
+  "name": "Usário 4",
+  "email": "usuario4@mail.com",
   "admin": false
+}
+```
+
+| Response                |
+| ----------------------- |
+| Body: application/json  |
+| Status: 400 BAD REQUEST |
+
+```json
+{
+  "message": "Email already exists."
 }
 ```
 
@@ -388,8 +428,9 @@ Atualização de usuário
 
 ```json
 {
-  // Rsposta de usuário não admin
   "message": "Insufficient permission."
+
+  // Resposta de usuário não admin
 }
 ```
 
@@ -436,8 +477,9 @@ Rota de delelção de usuário pelo id
 
 ```json
 {
-  // Rsposta de usuário não admin
   "message": "Insufficient permission."
+
+  // Resposta de usuário não admin
 }
 ```
 
@@ -449,5 +491,282 @@ Rota de delelção de usuário pelo id
 ```json
 {
   "message": "User not found."
+}
+```
+
+<h2>Rotas de Documentos</h2>
+
+| Método | Endpoint       | Responsabilidade                       |
+| ------ | -------------- | -------------------------------------- |
+| POST   | /documents     | Cadastro de documento                  |
+| GET    | /documents     | Listagem de documentos                 |
+| PATCH  | /documents/:id | Atualização de documento passando o id |
+| DELETE | /documents/:id | Deleção de documento passando o id     |
+
+<h3>POST /documents </h3>
+Rota de criação de Documento
+
+| Request                |
+| ---------------------- |
+| Body: application/json |
+| Auth: Bearer Token     |
+
+```json
+{
+  "submissionDate": "2026-08-31",
+  "documentName": "Documento",
+  "note": "entregar para o funcionário"
+
+  // o envio de "note" não é obrigatório (default: "")
+}
+```
+
+| Response               |
+| ---------------------- |
+| Body: application/json |
+| Status: 201 CREATED    |
+
+```json
+{
+  "id": "55f521d1-dc07-4406-bce9-4dab1db57919",
+  "documentName": "Documento",
+  "note": "entregar para o funcionário",
+  "submissionDate": "2026-08-31T00:00:00.000Z"
+}
+```
+
+| Response                 |
+| ------------------------ |
+| Body: application/json   |
+| Status : 400 BAD REQUEST |
+
+```json
+{
+  "message": {
+    "submissionDate": ["Required"],
+    "documentName": ["Required"]
+  }
+}
+```
+
+| Response                 |
+| ------------------------ |
+| Body: application/json   |
+| Status : 400 BAD REQUEST |
+
+```json
+{
+  "message": {
+    "submissionDate": ["Invalid Date."]
+  }
+}
+
+// envio de data inexistente.
+```
+
+| Response                 |
+| ------------------------ |
+| Body: application/json   |
+| Status : 400 BAD REQUEST |
+
+```json
+{
+  "message": {
+    "submissionDate": ["Invalid Format. Use 'YYYY-MM-DD'.", "Invalid Date."]
+  }
+}
+
+// envio de data mal formatada.
+```
+
+| Response                 |
+| ------------------------ |
+| Body: application/json   |
+| Status: 401 UNAUTHORIZED |
+
+```json
+{
+  "message": "Missing bearer token."
+}
+```
+
+| Response                 |
+| ------------------------ |
+| Body: application/json   |
+| Status: 401 UNAUTHORIZED |
+
+```json
+{
+  "message": "invalid signature"
+}
+```
+
+<h3>GET /documents</h3>
+Rota de listagem de documentos
+(O usuário só possui acesso aos seus próprios documentos)
+
+| Request            |
+| ------------------ |
+| Body: No content   |
+| Auth: Bearer Token |
+
+| Response               |
+| ---------------------- |
+| Body: application/json |
+| Status: 200 OK         |
+
+```json
+[
+  {
+    "id": "1d20d60d-c712-4268-9f38-7a997c4b00ec",
+    "submissionDate": "2025-05-31T00:00:00.000Z",
+    "documentName": "Documento 1",
+    "note": ""
+  },
+  {
+    "id": "55f521d1-dc07-4406-bce9-4dab1db57919",
+    "submissionDate": "2026-08-15T00:00:00.000Z",
+    "documentName": "Documento 2",
+    "note": "entregar para o funcionário"
+  },
+  {
+    "id": "1cd8471a-da94-440d-9010-54bfc084862e",
+    "submissionDate": "2026-09-03T00:00:00.000Z",
+    "documentName": "Documento 3",
+    "note": "entregar na recepção"
+  }
+]
+```
+
+| Response                 |
+| ------------------------ |
+| Body: application/json   |
+| Status: 401 UNAUTHORIZED |
+
+```json
+{
+  "message": "Missing bearer token."
+}
+```
+
+| Response                 |
+| ------------------------ |
+| Body: application/json   |
+| Status: 401 UNAUTHORIZED |
+
+```json
+{
+  "message": "invalid signature"
+}
+```
+
+<h3>PATCH /documents/:id</h3>
+Atualização de documento
+(Apenas o usuário proprietário da conta pode executar alteração.)
+
+| Request                |
+| ---------------------- |
+| Body: application/json |
+| Auth: Bearer Token     |
+
+```json
+{
+  "submissionDate": "2025-07-05",
+  "documentName": "Documento atualizado",
+  "note": "nota atualizada"
+}
+```
+
+| Response               |
+| ---------------------- |
+| Body: application/json |
+| Status: 200 OK         |
+
+```json
+{
+  "id": "c97cafef-5be7-41ad-a6a0-98fc643b664d",
+  "documentName": "Documento atualizado",
+  "note": "nota atualizada",
+  "submissionDate": "2025-07-05T00:00:00.000Z"
+}
+```
+
+| Response                 |
+| ------------------------ |
+| Body: application/json   |
+| Status: 401 UNAUTHORIZED |
+
+```json
+{
+  "message": "Missing bearer token."
+}
+```
+
+| Response                 |
+| ------------------------ |
+| Body: application/json   |
+| Status: 401 UNAUTHORIZED |
+
+```json
+{
+  "message": "invalid signature"
+}
+```
+
+| Response               |
+| ---------------------- |
+| Body: application/json |
+| Status: 404 NOT FOUND  |
+
+```json
+{
+  "message": "User does not have this document"
+}
+```
+
+<h3>DELETE /documents/:id</h3>
+Rota de delelção de documento pelo id
+(Apenas o usuário proprietário pode acessar.)
+
+| Request            |
+| ------------------ |
+| Body: No content   |
+| Auth: Bearer Token |
+
+| Response               |
+| ---------------------- |
+| Body: application/json |
+| Status: 204 NO CONTENT |
+
+| Response                 |
+| ------------------------ |
+| Body: application/json   |
+| Status: 401 UNAUTHORIZED |
+
+```json
+{
+  "message": "Missing bearer token."
+}
+```
+
+| Response                 |
+| ------------------------ |
+| Body: application/json   |
+| Status: 401 UNAUTHORIZED |
+
+```json
+{
+  "message": "invalid signature"
+}
+```
+
+| Response               |
+| ---------------------- |
+| Body: application/json |
+| Status: 404 NOT FOUND  |
+
+```json
+{
+  "message": "User does not have this document"
 }
 ```
