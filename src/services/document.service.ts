@@ -36,4 +36,8 @@ export class DocumentService {
 
     return documentSchema.parse(documentUpdated);
   }
+
+  async remove(document: any): Promise<void> {
+    await documentRepository.remove(document);
+  }
 }

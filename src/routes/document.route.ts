@@ -31,3 +31,6 @@ documentRouter.patch(
     documentController.update(req, res);
   }
 );
+documentRouter.delete("/:id", (req: Request, res: Response) => {
+  documentController.remove(req, res);
+});

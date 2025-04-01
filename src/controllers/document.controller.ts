@@ -26,4 +26,11 @@ export class DocumentController {
 
     return res.json(documentUpdated);
   }
+
+  async remove(req: Request, res: Response) {
+    const { foundDocument } = res.locals;
+    await this.documentService.remove(foundDocument);
+
+    return res.status(204).json();
+  }
 }
