@@ -74,13 +74,15 @@ Rota de login de usuário
         "id": "1d20d60d-c712-4268-9f38-7a997c4b00ec",
         "submissionDate": "2025-05-31T00:00:00.000Z",
         "documentName": "Documento 1",
-        "note": ""
+        "note": "",
+        "delivered": false
       },
       {
         "id": "55f521d1-dc07-4406-bce9-4dab1db57919",
         "submissionDate": "2026-08-31T00:00:00.000Z",
         "documentName": "Documento 2",
-        "note": "entregar para o funcionário"
+        "note": "entregar para o funcionário",
+        "delivered": true
       }
     ]
   }
@@ -144,13 +146,15 @@ Rota de informações do usuário
         "id": "1d20d60d-c712-4268-9f38-7a997c4b00ec",
         "submissionDate": "2025-05-31T00:00:00.000Z",
         "documentName": "Documento 1",
-        "note": ""
+        "note": "",
+        "delivered": false
       },
       {
         "id": "55f521d1-dc07-4406-bce9-4dab1db57919",
         "submissionDate": "2026-08-31T00:00:00.000Z",
         "documentName": "Documento 2",
-        "note": "entregar para o funcionário"
+        "note": "entregar para o funcionário",
+        "delivered": true
       }
     ]
   }
@@ -202,9 +206,8 @@ Rota de criação de usuário
   "password": "1234",
   "email": "admin@mail.com",
   "admin": true
-
-  //   o envio de "admin" não é obrigatório (default: false).
 }
+//   o envio de "admin" não é obrigatório (default: false).
 ```
 
 | Response               |
@@ -303,9 +306,8 @@ Rota de listagem de usuários
 ```json
 {
   "message": "Insufficient permission."
-
-  // Resposta de usuário não admin
 }
+// Resposta de usuário não admin
 ```
 
 <h3>GET /users/:id</h3>
@@ -350,9 +352,8 @@ Rota de listagem de usuário pelo id
 ```json
 {
   "message": "Insufficient permission."
-
-  // Resposta de usuário não admin
 }
+// Resposta de usuário não admin
 ```
 
 | Response               |
@@ -380,9 +381,8 @@ Atualização de usuário
   "name": "Usário 4",
   "password": "12345",
   "email": "usuario4@mail.com"
-
-  // o campo "admin" não pode ser alterado
 }
+// o campo "admin" não pode ser alterado
 ```
 
 | Response               |
@@ -429,9 +429,8 @@ Atualização de usuário
 ```json
 {
   "message": "Insufficient permission."
-
-  // Resposta de usuário não admin
 }
+// Resposta de usuário não admin
 ```
 
 | Response               |
@@ -478,9 +477,8 @@ Rota de delelção de usuário pelo id
 ```json
 {
   "message": "Insufficient permission."
-
-  // Resposta de usuário não admin
 }
+// Resposta de usuário não admin
 ```
 
 | Response               |
@@ -515,10 +513,11 @@ Rota de criação de Documento
 {
   "submissionDate": "2026-08-31",
   "documentName": "Documento",
-  "note": "entregar para o funcionário"
-
-  // o envio de "note" não é obrigatório (default: "")
+  "note": "entregar para o funcionário",
+  "delivered": false
 }
+// o envio de "note" não é obrigatório (default: "")
+// o envio de "delivered" não é obrigatório (default: false)
 ```
 
 | Response               |
@@ -531,7 +530,8 @@ Rota de criação de Documento
   "id": "55f521d1-dc07-4406-bce9-4dab1db57919",
   "documentName": "Documento",
   "note": "entregar para o funcionário",
-  "submissionDate": "2026-08-31T00:00:00.000Z"
+  "submissionDate": "2026-08-31T00:00:00.000Z",
+  "delivered": false
 }
 ```
 
@@ -560,7 +560,6 @@ Rota de criação de Documento
     "submissionDate": ["Invalid Date."]
   }
 }
-
 // envio de data inexistente.
 ```
 
@@ -575,7 +574,6 @@ Rota de criação de Documento
     "submissionDate": ["Invalid Format. Use 'YYYY-MM-DD'.", "Invalid Date."]
   }
 }
-
 // envio de data mal formatada.
 ```
 
@@ -621,19 +619,22 @@ Rota de listagem de documentos
     "id": "1d20d60d-c712-4268-9f38-7a997c4b00ec",
     "submissionDate": "2025-05-31T00:00:00.000Z",
     "documentName": "Documento 1",
-    "note": ""
+    "note": "",
+    "delivered": false
   },
   {
     "id": "55f521d1-dc07-4406-bce9-4dab1db57919",
     "submissionDate": "2026-08-15T00:00:00.000Z",
     "documentName": "Documento 2",
-    "note": "entregar para o funcionário"
+    "note": "entregar para o funcionário",
+    "delivered": true
   },
   {
     "id": "1cd8471a-da94-440d-9010-54bfc084862e",
     "submissionDate": "2026-09-03T00:00:00.000Z",
     "documentName": "Documento 3",
-    "note": "entregar na recepção"
+    "note": "entregar na recepção",
+    "delivered": false
   }
 ]
 ```
@@ -673,7 +674,8 @@ Atualização de documento
 {
   "submissionDate": "2025-07-05",
   "documentName": "Documento atualizado",
-  "note": "nota atualizada"
+  "note": "nota atualizada",
+  "delivered": true
 }
 ```
 
@@ -687,7 +689,8 @@ Atualização de documento
   "id": "c97cafef-5be7-41ad-a6a0-98fc643b664d",
   "documentName": "Documento atualizado",
   "note": "nota atualizada",
-  "submissionDate": "2025-07-05T00:00:00.000Z"
+  "submissionDate": "2025-07-05T00:00:00.000Z",
+  "delivered": true
 }
 ```
 

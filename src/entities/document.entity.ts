@@ -15,6 +15,9 @@ export class Document {
   @Column({ length: 50, default: "" })
   note: string;
 
+  @Column({ default: false })
+  delivered: boolean;
+
   @ManyToOne(() => User, (u) => u.documents, {
     onDelete: "CASCADE",
   })

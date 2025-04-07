@@ -16,6 +16,7 @@ export const documentSchema = z.object({
     .transform((date) => date.toISOString()),
   documentName: z.string().max(50).min(2),
   note: z.string().max(50).default(""),
+  delivered: z.boolean().default(false),
 });
 
 export const documentCreateSchema = documentSchema.omit({ id: true });
