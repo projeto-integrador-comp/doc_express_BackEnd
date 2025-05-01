@@ -11,7 +11,15 @@ import { documentRouter } from "./routes/document.route";
 const app: Application = express();
 
 app.use(json());
-app.use(cors({ origin: "http://localhost:5173" }));
+app.use(
+  cors({
+    origin: [
+      "http://localhost:5173",
+      "https://pi-grupo19-front-end.vercel.app",
+    ],
+    credentials: true,
+  })
+);
 
 app.use("/users", userRouter);
 app.use("/login", loginRouter);
