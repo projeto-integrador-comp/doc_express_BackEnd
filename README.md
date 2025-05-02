@@ -1,6 +1,8 @@
-<h1 align = center>PI_grupo19_API</h1>
+<h1 align = center>DocExpress API</h1>
 
-API Feita com Node.js (Express), onde usuários podem gerenciar a entrega de documentos.
+A DocExpress API é o backend da aplicação DocExpress, responsável por gerenciar os dados de entregas de documentos. Desenvolvida com Node.js e TypeScript, ela fornece uma interface para que o frontend possa criar, listar, atualizar e remover entregas de forma organizada e segura.
+
+Essa API segue o estilo REST, utilizando rotas bem definidas e métodos HTTP para facilitar a integração com outras aplicações. Seu objetivo é garantir que todas as informações cadastradas pelos usuários sejam processadas corretamente e armazenadas de maneira confiável no banco de dados.
 
 <h2>Configuração do ambiente</h1>
 
