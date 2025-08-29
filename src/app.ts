@@ -15,7 +15,7 @@ app.use(
   cors({
     origin: [
       "http://localhost:5173",
-      "https://pi-grupo19-front-end.vercel.app",
+      "https://pi-creche.vercel.app",
     ],
     credentials: true,
   })
