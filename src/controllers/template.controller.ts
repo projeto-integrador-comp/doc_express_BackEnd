@@ -1,4 +1,3 @@
-// src/controllers/template.controller.ts
 import { Request, Response } from "express";
 import { TemplateService } from "../services/template.service";
 import {
