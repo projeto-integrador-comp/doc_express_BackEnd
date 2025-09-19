@@ -1,18 +1,44 @@
+// tests/storage.test.ts
 import { SupabaseStorageService } from "../src/services/SupabaseStorageService";
-import path from "path";
 import fs from "fs";
+import path from "path";
 
-describe("SupabaseStorageService", () => {
+describe("SupabaseStorageService (DEV-001)", () => {
   const service = new SupabaseStorageService();
+  const testBucket = process.env.SUPABASE_BUCKET_TEMPLATES || "templates";
+  const testFilePath = path.join(__dirname, "fixtures", "test-file.txt");
+  const testFileName = "test-file.txt";
+
+  beforeAll(() => {
+    // garantir que o arquivo de teste exista
+    const fixturesDir = path.join(__dirname, "fixtures");
+    if (!fs.existsSync(fixturesDir)) {
+      fs.mkdirSync(fixturesDir);
+    }
+    fs.writeFileSync(testFilePath, "conteúdo de teste");
+  });
+
+  afterAll(() => {
+    // limpar o arquivo local após os testes
+    if (fs.existsSync(testFilePath)) {
+      fs.unlinkSync(testFilePath);
+    }
+  });
 
   it("should upload a file and return a public URL", async () => {
-    const filePath = path.join(__dirname, "fixtures", "sample.txt");
-    fs.writeFileSync(filePath, "test content");
+    const url = await service.uploadFile(testBucket, testFilePath);
+    expect(url).toContain("https://"); // deve retornar uma URL pública
+  });
 
-    const result = await service.uploadFile("templates", filePath);
+  it("should download a file that was previously uploaded", async () => {
+    const buffer = await service.downloadFile(testBucket, testFileName);
+    expect(buffer.toString()).toBe("conteúdo de teste");
+  });
 
-    expect(result).toMatch(/^http/); // we expect a URL starting with http
+  it("should delete a file and make it unavailable", async () => {
+    await service.deleteFile(testBucket, testFileName);
 
-    fs.unlinkSync(filePath);
+    // depois de deletado, o download deve falhar
+    await expect(service.downloadFile(testBucket, testFileName)).rejects.toThrow();
   });
 });
