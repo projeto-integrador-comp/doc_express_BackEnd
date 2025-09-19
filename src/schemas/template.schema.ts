@@ -31,8 +31,9 @@ export const templateListSchema = templateReturnSchema.array();
 
 export const templateUpdateSchema = templateCreateSchema.partial();
 
-export const templateUploadSchema = templateCreateSchema.omit({
-  filePath: true,
+export const templateUploadSchema = z.object({
+  name: z.string().min(5).max(50),
+  description: z.string().max(255).min(1),
 });
 
 export { allowedMimeTypes };

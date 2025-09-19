@@ -1,23 +1,59 @@
 import { Request, Response } from "express";
 import { TemplateService } from "../services/template.service";
 import {
+  TAllowedMimeTypes,
   TTemplateCreate,
   TTemplateUpdate,
 } from "../interfaces/template.interface";
 import { AppError } from "../errors/AppError.error";
+import fs from "fs";
+import path from "path";
+import z from "zod";
+import { templateUploadSchema } from "../schemas/template.schema";
 
 export class TemplateController {
   constructor(private templateService: TemplateService) {}
 
   async create(req: Request, res: Response) {
     try {
-      const reqBody: TTemplateCreate = req.body;
-      const newTemplate = await this.templateService.create(reqBody);
+      if (!req.file) {
+        throw new AppError("Nenhum arquivo enviado", 400);
+      }
+
+      // Crie um objeto completo para validação Zod
+      const completeBody = {
+        ...req.body,
+        fileName: req.file.originalname,
+        fileSize: req.file.size,
+        mimeType: req.file.mimetype,
+      };
+
+      // Valide o objeto COMPLETO com Zod
+      const validatedData = templateUploadSchema.parse(completeBody);
+
+      // Agora crie os dados do template
+      const templateData: TTemplateCreate = {
+        name: validatedData.name,
+        description: validatedData.description,
+        fileName: req.file.originalname,
+        filePath: req.file.path,
+        fileSize: req.file.size,
+        mimeType: req.file.mimetype as TAllowedMimeTypes,
+        isActive: true,
+      };
+
+      const newTemplate = await this.templateService.create(templateData);
       return res.status(201).json(newTemplate);
     } catch (error) {
       if (error instanceof AppError) {
         return res.status(error.statusCode).json({ error: error.message });
       }
+
+      // Capture erros de validação do Zod
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: error.errors });
+      }
+
       return res.status(400).json({ error: "Error creating template" });
     }
   }
@@ -87,6 +123,11 @@ export class TemplateController {
         throw new AppError("Template not found", 404);
       }
 
+      // Verifica se o arquivo físico existe
+      if (!fs.existsSync(template.filePath)) {
+        throw new AppError("Arquivo não encontrado", 404);
+      }
+
       res.setHeader("Content-Type", template.mimeType);
       res.setHeader(
         "Content-Disposition",
@@ -94,10 +135,8 @@ export class TemplateController {
       );
       res.setHeader("Content-Length", template.fileSize.toString());
 
-      return res.json({
-        message: "Download endpoint ready - file streaming to be implemented",
-        template,
-      });
+      // Stream do arquivo físico
+      return res.sendFile(path.resolve(template.filePath));
     } catch (error) {
       if (error instanceof AppError) {
         return res.status(error.statusCode).json({ error: error.message });

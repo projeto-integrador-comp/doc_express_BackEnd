@@ -9,6 +9,7 @@ import {
 import { verifyToken } from "../middlewares/verifyToken.middleware";
 import { validateToken } from "../middlewares/validatetoken.middleware";
 import { verifyAdimn } from "../middlewares/verifyAdimin.middleware";
+import { upload } from "../config/multer.config";
 
 export const templateRouter: Router = Router();
 const templateService = new TemplateService();
@@ -23,9 +24,14 @@ templateRouter.get("/:id/download", (req, res) => {
 templateRouter.use(verifyToken, validateToken, verifyAdimn);
 
 // CREATE - Upload de template
-templateRouter.post("/", validateBody(templateUploadSchema), (req, res) => {
-  templateController.create(req, res);
-});
+templateRouter.post(
+  "/",
+  upload.single("file"), // ✅ Middleware do Multer
+  validateBody(templateUploadSchema),
+  (req, res) => {
+    templateController.create(req, res);
+  }
+);
 
 // READ - Listar todos templates
 templateRouter.get("/", (req, res) => {
