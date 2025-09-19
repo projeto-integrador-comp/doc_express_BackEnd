@@ -5,6 +5,7 @@ import {
   TTemplateUpdate,
 } from "../interfaces/template.interface";
 import { ILike } from "typeorm";
+import { AppError } from "../errors/AppError.error";
 
 export class TemplateService {
   private templateRepository = AppDataSource.getRepository(Template);
@@ -34,12 +35,15 @@ export class TemplateService {
     });
 
     const updatedTemplate = await this.templateRepository.findOneBy({ id });
-    if (!updatedTemplate) throw new Error("Template not found");
+    if (!updatedTemplate) throw new AppError("Template not found", 404);
 
     return updatedTemplate;
   }
 
   async remove(id: string): Promise<void> {
+    const template = await this.readOne(id);
+    if (!template) throw new AppError("Template not found", 404);
+
     await this.templateRepository.update(id, {
       isActive: false,
       updatedAt: new Date(),
