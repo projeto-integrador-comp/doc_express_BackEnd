@@ -1,8 +1,10 @@
 // tests/storage.test.ts
+import { config } from "dotenv";
 import { SupabaseStorageService } from "../src/services/SupabaseStorageService";
 import fs from "fs";
 import path from "path";
 
+config();
 describe("SupabaseStorageService (DEV-001)", () => {
   const service = new SupabaseStorageService();
   const testBucket = process.env.SUPABASE_BUCKET_TEMPLATES || "templates";
