@@ -20,8 +20,10 @@ export class Template {
   @Column({ nullable: false })
   fileName: string;
 
-  @Column({ nullable: false })
-  filePath: string;
+  // @Column({ nullable: false })
+  // filePath: string;
+  @Column({ length: 500, nullable:true})
+  fileUrl: string;
 
   @Column("int")
   fileSize: number;
@@ -34,12 +36,12 @@ export class Template {
 
   // CORREÇÃO: Usando @CreateDateColumn para garantir que a data
   // seja adicionada automaticamente apenas na criação.
-  @CreateDateColumn({ type: "datetime" })
+  @CreateDateColumn()
   createdAt: Date;
 
   // CORREÇÃO: Usando @UpdateDateColumn para garantir que a data
   // seja atualizada automaticamente em qualquer alteração do registro.
-  @UpdateDateColumn({ type: "datetime" })
+  @UpdateDateColumn()
   updatedAt: Date;
 }
 

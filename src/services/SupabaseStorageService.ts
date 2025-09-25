@@ -8,23 +8,58 @@ export class SupabaseStorageService {
   constructor() {
     const url = process.env.SUPABASE_URL!;
     const key = process.env.SUPABASE_KEY!;
+
+    if (!url || !key) {
+      throw new Error("Supabase URL and KEY are required");
+    }
+
     this.client = createClient(url, key);
   }
 
-  async uploadFile(bucket: string, filePath: string): Promise<string> {
-    const fileName = path.basename(filePath);
-    const fileBuffer = fs.readFileSync(filePath);
+  // async uploadFile(bucket: string, filePath: string): Promise<string> {
+  //   const fileName = path.basename(filePath);
+  //   const fileBuffer = fs.readFileSync(filePath);
+
+  //   const { error } = await this.client.storage
+  //     .from(bucket)
+  //     .upload(fileName, fileBuffer, { upsert: true });
+
+  //   if (error) {
+  //     throw new Error(`Upload failed: ${error.message}`);
+  //   }
+
+  //   const { data } = this.client.storage.from(bucket).getPublicUrl(fileName);
+  //   return data.publicUrl;
+  // }
+
+  // MÉTODO NOVO: Upload a partir de Buffer (em vez de arquivo local)
+  async uploadFileBuffer(
+    bucket: string,
+    fileBuffer: Buffer,
+    fileName: string,
+    mimeType: string
+  ): Promise<string> {
+    // Gera um nome único para evitar conflitos
+    const uniqueFileName = `${Date.now()}-${fileName}`;
 
     const { error } = await this.client.storage
       .from(bucket)
-      .upload(fileName, fileBuffer, { upsert: true });
+      .upload(uniqueFileName, fileBuffer, {
+        contentType: mimeType,
+        upsert: false, // Não sobrescrever arquivos existentes
+        cacheControl: "3600", // Cache de 1 hora
+      });
 
     if (error) {
       throw new Error(`Upload failed: ${error.message}`);
     }
 
-    const { data } = this.client.storage.from(bucket).getPublicUrl(fileName);
-    return data.publicUrl;
+    // Obtém a URL pública do arquivo
+    const {
+      data: { publicUrl },
+    } = this.client.storage.from(bucket).getPublicUrl(uniqueFileName);
+
+    return publicUrl;
   }
 
   async downloadFile(bucket: string, fileName: string): Promise<Buffer> {
@@ -45,5 +80,14 @@ export class SupabaseStorageService {
     if (error) {
       throw new Error(`Delete failed: ${error.message}`);
     }
+  }
+
+  // MÉTODO NOVO: Verificar se arquivo existe
+  async fileExists(bucket: string, fileName: string): Promise<boolean> {
+    const { data } = await this.client.storage
+      .from(bucket)
+      .list("", { search: fileName });
+
+    return !!data?.some((file) => file.name === fileName);
   }
 }

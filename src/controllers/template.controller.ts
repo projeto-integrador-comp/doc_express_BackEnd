@@ -4,6 +4,7 @@ import {
   TAllowedMimeTypes,
   TTemplateCreate,
   TTemplateUpdate,
+  ITemplateUploadData,
 } from "../interfaces/template.interface";
 import { AppError } from "../errors/AppError.error";
 import fs from "fs";
@@ -15,46 +16,81 @@ export class TemplateController {
   constructor(private templateService: TemplateService) {}
 
   async create(req: Request, res: Response) {
+    // try {
+    //   if (!req.file) {
+    //     throw new AppError("Nenhum arquivo enviado", 400);
+    //   }
+
+    //   // Crie um objeto completo para validação Zod
+    //   const completeBody = {
+    //     ...req.body,
+    //     fileName: req.file.originalname,
+    //     fileSize: req.file.size,
+    //     mimeType: req.file.mimetype,
+    //   };
+
+    //   // Valide o objeto COMPLETO com Zod
+    //   const validatedData = templateUploadSchema.parse(completeBody);
+
+    //   // Agora crie os dados do template
+    //   const templateData: TTemplateCreate = {
+    //     name: validatedData.name,
+    //     description: validatedData.description,
+    //     fileName: req.file.originalname,
+    //     filePath: req.file.path,
+    //     fileSize: req.file.size,
+    //     mimeType: req.file.mimetype as TAllowedMimeTypes,
+    //     isActive: true,
+    //   };
+
+    //   const newTemplate = await this.templateService.create(templateData);
+    //   return res.status(201).json(newTemplate);
+    // } catch (error) {
+    //   if (error instanceof AppError) {
+    //     return res.status(error.statusCode).json({ error: error.message });
+    //   }
+
+    //   // Capture erros de validação do Zod
+    //   if (error instanceof z.ZodError) {
+    //     return res.status(400).json({ error: error.errors });
+    //   }
+
+    //   return res.status(400).json({ error: "Error creating template" });
+    // }
     try {
       if (!req.file) {
         throw new AppError("Nenhum arquivo enviado", 400);
       }
 
-      // Crie um objeto completo para validação Zod
-      const completeBody = {
-        ...req.body,
-        fileName: req.file.originalname,
-        fileSize: req.file.size,
-        mimeType: req.file.mimetype,
-      };
+      // Validação dos dados do formulário
+      const validatedData = templateUploadSchema.parse(req.body);
 
-      // Valide o objeto COMPLETO com Zod
-      const validatedData = templateUploadSchema.parse(completeBody);
-
-      // Agora crie os dados do template
-      const templateData: TTemplateCreate = {
+      // Prepara os dados para upload
+      const uploadData: ITemplateUploadData = {
         name: validatedData.name,
         description: validatedData.description,
         fileName: req.file.originalname,
-        filePath: req.file.path,
         fileSize: req.file.size,
         mimeType: req.file.mimetype as TAllowedMimeTypes,
-        isActive: true,
+        fileBuffer: req.file.buffer, // Agora usamos o buffer em memória
       };
 
-      const newTemplate = await this.templateService.create(templateData);
+      // Usa o novo método que faz upload para o bucket
+      const newTemplate = await this.templateService.createWithUpload(
+        uploadData
+      );
+
       return res.status(201).json(newTemplate);
     } catch (error) {
       if (error instanceof AppError) {
         return res.status(error.statusCode).json({ error: error.message });
       }
 
-      // Capture erros de validação do Zod
       if (error instanceof z.ZodError) {
         return res.status(400).json({ error: error.errors });
       }
 
-      return res.status(400).json({ error: "Error creating template" });
+      return res.status(500).json({ error: "Error creating template" });
     }
   }
 
@@ -115,28 +151,23 @@ export class TemplateController {
   }
 
   async download(req: Request, res: Response) {
+    //
     try {
       const { id } = req.params;
-      const template = await this.templateService.readOne(id);
 
-      if (!template) {
-        throw new AppError("Template not found", 404);
-      }
+      // Obtém o arquivo do bucket
+      const { buffer, template } = await this.templateService.downloadFile(id);
 
-      // Verifica se o arquivo físico existe
-      if (!fs.existsSync(template.filePath)) {
-        throw new AppError("Arquivo não encontrado", 404);
-      }
-
+      // Configura headers para download
       res.setHeader("Content-Type", template.mimeType);
       res.setHeader(
         "Content-Disposition",
         `attachment; filename="${template.fileName}"`
       );
-      res.setHeader("Content-Length", template.fileSize.toString());
+      res.setHeader("Content-Length", buffer.length.toString());
 
-      // Stream do arquivo físico
-      return res.sendFile(path.resolve(template.filePath));
+      // Envia o buffer diretamente
+      return res.send(buffer);
     } catch (error) {
       if (error instanceof AppError) {
         return res.status(error.statusCode).json({ error: error.message });
