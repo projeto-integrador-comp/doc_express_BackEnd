@@ -8,7 +8,7 @@ import { handleAppError } from "./middlewares/handleAppError.middleware";
 import { profileRouter } from "./routes/profile.route";
 import { documentRouter } from "./routes/document.route";
 import templateRouter from "./routes/template.route";
-import path from "path";
+// import path from "path";
 
 const app: Application = express();
 
@@ -25,7 +25,7 @@ app.use("/login", loginRouter);
 app.use("/profile", profileRouter);
 app.use("/documents", documentRouter);
 app.use("/templates", templateRouter);
-app.use("/uploads", express.static(path.join(__dirname, "..", "uploads")));
+// app.use("/uploads", express.static(path.join(__dirname, "..", "uploads")));
 
 app.use(handleAppError);
 

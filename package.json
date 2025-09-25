@@ -6,6 +6,12 @@
   "scripts": {
     "dev": "tsnd --cls --rs --ignore-watch node_modules src/server.ts",
     "typeorm": "typeorm-ts-node-commonjs",
+    "migration:create": "npm run typeorm -- migration:create",
+    "migration:generate": "npm run typeorm -- migration:generate -d src/data-source.ts",
+    "migration:run": "npm run typeorm -- migration:run -d src/data-source.ts",
+    "migration:revert": "npm run typeorm -- migration:revert -d src/data-source.ts",
+    "migration:show": "npm run typeorm -- migration:show -d src/data-source.ts",
+    "schema:sync": "npm run typeorm -- schema:sync -d src/data-source.ts",
     "start": "node dist/server.js",
     "build": "tsc",
     "test": "jest --runInBand"

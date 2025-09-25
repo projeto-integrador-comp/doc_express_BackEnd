@@ -1,16 +1,15 @@
-import { DataSource } from 'typeorm';
-import { Template } from '../src/entities/template.entity';
+import { DataSource } from "typeorm";
+import { Template } from "../src/entities/template.entity";
 
-// Helper function to introduce a delay
-const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-describe('Template Entity', () => {
+describe("Template Entity", () => {
   let dataSource: DataSource;
 
   beforeAll(async () => {
     dataSource = new DataSource({
-      type: 'sqlite',
-      database: ':memory:',
+      type: "sqlite",
+      database: ":memory:",
       entities: [Template],
       synchronize: true,
       logging: false,
@@ -25,17 +24,17 @@ describe('Template Entity', () => {
   });
 
   // Teste 1: Validação completa de CRUD
-  it('should perform CRUD operations on Template entity', async () => {
+  it("should perform CRUD operations on Template entity", async () => {
     const repository = dataSource.getRepository(Template);
 
-    // CRIAÇÃO
+    // CRIAÇÃO - COM OS CAMPOS CORRETOS
     const newTemplate = repository.create({
-      name: 'Termo de Aceite',
-      description: 'Documento para aceite de termos de uso.',
-      fileName: 'termo-aceite.pdf',
-      filePath: '/docs/termo-aceite.pdf',
+      name: "Termo de Aceite",
+      description: "Documento para aceite de termos de uso.",
+      fileName: "termo-aceite.pdf",
+      fileUrl: "https://supabase.com/templates/termo-aceite.pdf", // ✅ filePath → fileUrl
       fileSize: 10240,
-      mimeType: 'application/pdf',
+      mimeType: "application/pdf",
     });
     await repository.save(newTemplate);
     expect(newTemplate.id).toBeDefined();
@@ -43,12 +42,14 @@ describe('Template Entity', () => {
     // LEITURA
     const foundTemplate = await repository.findOneBy({ id: newTemplate.id });
     expect(foundTemplate).toBeDefined();
-    expect(foundTemplate?.name).toBe('Termo de Aceite');
-    
+    expect(foundTemplate?.name).toBe("Termo de Aceite");
+
     // ATUALIZAÇÃO
-    await repository.update(foundTemplate!.id, { description: 'Nova descrição.' });
+    await repository.update(foundTemplate!.id, {
+      description: "Nova descrição.",
+    });
     const updatedTemplate = await repository.findOneBy({ id: newTemplate.id });
-    expect(updatedTemplate?.description).toBe('Nova descrição.');
+    expect(updatedTemplate?.description).toBe("Nova descrição.");
 
     // DELEÇÃO
     await repository.delete(newTemplate.id);
@@ -57,63 +58,74 @@ describe('Template Entity', () => {
   });
 
   // Teste 2: Verificar se um template é criado com valores padrão
-  it('should create a template with default values', async () => {
+  it("should create a template with default values", async () => {
     const repository = dataSource.getRepository(Template);
     const newTemplate = repository.create({
-      name: 'Documento Padrão',
-      fileName: 'default.txt',
-      filePath: '/docs/default.txt',
+      name: "Documento Padrão",
+      fileName: "default.txt",
+      fileUrl: "https://supabase.com/templates/default.txt", // ✅ filePath → fileUrl
       fileSize: 512,
-      mimeType: 'text/plain',
+      mimeType: "text/plain",
     });
     await repository.save(newTemplate);
-    
+
     expect(newTemplate.isActive).toBe(true);
     expect(newTemplate.createdAt).toBeInstanceOf(Date);
     expect(newTemplate.updatedAt).toBeInstanceOf(Date);
   });
-  
-  // Teste 3: Verificar se a data de atualização é alterada
-  it('should update updatedAt on record change', async () => {
-      const repository = dataSource.getRepository(Template);
-      const newTemplate = repository.create({
-          name: 'Template para atualização',
-          description: 'Desc',
-          fileName: 'file.txt',
-          filePath: 'path',
-          fileSize: 100,
-          mimeType: 'text/plain',
-      });
 
-      await repository.save(newTemplate);
-      const initialUpdatedAt = newTemplate.updatedAt;
-      
-      // CORREÇÃO FINAL: Espera 10ms para garantir que o timestamp do banco de dados mude.
-      await sleep(4000);
-      
-      await repository.update(newTemplate.id, { name: 'Nome atualizado' });
-      
-      const updatedTemplate = await repository.findOneBy({ id: newTemplate.id });
-      
-      // A data de atualização deve ser maior que a data de atualização inicial
-      expect(updatedTemplate).toBeDefined();
-      expect(updatedTemplate!.updatedAt.getTime()).toBeGreaterThan(initialUpdatedAt.getTime());
+  // Teste 3: Verificar se a data de atualização é alterada (CORRIGIDO)
+  it("should update updatedAt on record change", async () => {
+    const repository = dataSource.getRepository(Template);
+
+    // Salva o template
+    const newTemplate = repository.create({
+      name: "Template para atualização",
+      description: "Desc",
+      fileName: "file.txt",
+      fileUrl: "https://supabase.com/templates/file.txt",
+      fileSize: 100,
+      mimeType: "text/plain",
+    });
+    await repository.save(newTemplate);
+
+    // ✅ CORREÇÃO: Recarrega do banco para pegar o timestamp exato
+    const savedTemplate = await repository.findOneBy({ id: newTemplate.id });
+    const initialUpdatedAt = savedTemplate!.updatedAt;
+
+    // ✅ CORREÇÃO: Espera mais tempo (500ms) e usa transaction
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
+    // ✅ CORREÇÃO: Atualiza com transaction para forçar o updatedAt
+    await repository.manager.transaction(async (transactionalEntityManager) => {
+      await transactionalEntityManager.update(Template, newTemplate.id, {
+        name: "Nome atualizado",
+      });
+    });
+
+    // ✅ CORREÇÃO: Recarrega o template atualizado
+    const updatedTemplate = await repository.findOneBy({ id: newTemplate.id });
+
+    expect(updatedTemplate).toBeDefined();
+    expect(updatedTemplate!.updatedAt.getTime()).toBeGreaterThan(
+      initialUpdatedAt.getTime()
+    );
   });
 
-  // Teste 4: Verificar se o campo `name` não pode ser nulo
-  it('should not allow creating a template with a null name', async () => {
+  // Teste 4: Verificar se o campo `name` não pode ser nulo (CORRIGIDO)
+  it("should not allow creating a template with a null name", async () => {
     const repository = dataSource.getRepository(Template);
-    
-    // Omitindo 'name' intencionalmente para causar o erro
-    const newTemplate = repository.create({
-      description: 'Documento sem nome.',
-      fileName: 'no-name.pdf',
-      filePath: '/docs/no-name.pdf',
+
+    // ✅ CORREÇÃO: Use any ou omita a tipagem
+    const templateData: any = {
+      description: "Documento sem nome.",
+      fileName: "no-name.pdf",
+      fileUrl: "https://supabase.com/templates/no-name.pdf", // ✅ filePath → fileUrl
       fileSize: 1024,
-      mimeType: 'application/pdf',
-    } as Template);
-    
+      mimeType: "application/pdf",
+    };
+
+    const newTemplate = repository.create(templateData);
     await expect(repository.save(newTemplate)).rejects.toThrow();
   });
 });
-

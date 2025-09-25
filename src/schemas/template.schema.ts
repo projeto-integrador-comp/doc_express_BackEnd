@@ -11,7 +11,8 @@ const templateSchema = z.object({
   name: z.string().min(5).max(50),
   description: z.string().max(255).min(1),
   fileName: z.string().min(1),
-  filePath: z.string().min(1),
+  // filePath: z.string().min(1),
+  fileUrl: z.string().url().max(500).nullable(),
   fileSize: z.number().int().positive().max(10485760),
   mimeType: z.enum(allowedMimeTypes),
   isActive: z.boolean().default(true),
@@ -21,6 +22,7 @@ const templateSchema = z.object({
 
 export const templateCreateSchema = templateSchema.omit({
   id: true,
+  fileUrl: true,
   createdAt: true,
   updatedAt: true,
 });
