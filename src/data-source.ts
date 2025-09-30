@@ -18,9 +18,7 @@ const settings = (): DataSourceOptions => {
     entities: [entitiesPath],
     migrations: [migrationPath],
     extra: {
-      ssl: {
-        rejectUnauthorized: false, // garante que o certificado self-signed será aceito
-      },
+      ssl: true, // força SSL, o Node vai aceitar o certificado do Supabase
     },
   };
 };
