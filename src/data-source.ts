@@ -17,8 +17,10 @@ const settings = (): DataSourceOptions => {
     logging: true,
     entities: [entitiesPath],
     migrations: [migrationPath],
-    ssl: {
-      rejectUnauthorized: false, // ✅ permite certificados autoassinados
+    extra: {
+      ssl: {
+        rejectUnauthorized: false, // garante que o certificado self-signed será aceito
+      },
     },
   };
 };
