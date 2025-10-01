@@ -226,3 +226,44 @@ curl http://localhost:3000/documents -H "Authorization: Bearer <token>"
 Trecho adaptado do README: `PORT`, `DATABASE_URL`, `SECRET_KEY`, `SUPABASE_URL`, `SUPABASE_KEY`, `SUPABASE_BUCKET_TEMPLATES`, `SUPABASE_BUCKET_UPLOADS`.
 
 ---
+
+
+### 📎 Novo endpoint — Upload de anexo em Document (DEV-019 a DEV-023)
+
+**POST /documents/:id/upload**
+
+Permite anexar um arquivo a um documento existente, armazenando o arquivo no Supabase (bucket `uploads`) 
+e salvando metadados (`fileUrl`, `fileName`, `mimeType`, `fileSize`, `fileUploadedAt`) na tabela `documents`.
+
+* **Headers**:  
+  `Authorization: Bearer <token>`  
+  `Content-Type: multipart/form-data`
+
+* **Body (form-data)**:
+  - `file` (campo obrigatório — binário)
+  - Metadados adicionais opcionais podem ser enviados (ex.: descrição)
+
+* **Exemplo de requisição (cURL)**:
+
+```bash
+curl -X POST http://localhost:3000/documents/123/upload   -H "Authorization: Bearer <token>"   -F "file=@contrato.pdf"
+```
+
+* **Exemplo de resposta (200/201)**:
+
+```json
+{
+  "id": "123",
+  "title": "Entrega Contrato",
+  "fileUrl": "https://supabase.mock/uploads/contrato.pdf",
+  "fileName": "contrato.pdf",
+  "mimeType": "application/pdf",
+  "fileSize": 234567,
+  "fileUploadedAt": "2025-10-01T18:30:00.000Z"
+}
+```
+
+* **Erros**:
+  - `400` se não houver arquivo.
+  - `401` se usuário não autenticado ou não for dono do documento.
+  - `404` se documento não existir.
