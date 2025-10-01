@@ -22,4 +22,20 @@ export class Document {
     onDelete: "CASCADE",
   })
   user: User;
+
+  // === Attachment fields ===
+  @Column({ type: "text", nullable: true })
+  fileUrl: string | null = null;
+
+  @Column({ type: "varchar", length: 255, nullable: true })
+  fileName: string | null = null;
+
+  @Column({ type: "varchar", length: 100, nullable: true })
+  mimeType: string | null = null;
+
+  @Column({ type: "int", nullable: true })
+  fileSize: number | null = null;
+
+  @Column({ type: "timestamp", nullable: true })
+  fileUploadedAt: Date | null = null;
 }
