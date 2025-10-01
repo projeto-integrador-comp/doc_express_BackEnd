@@ -7,22 +7,22 @@ import {
 } from "../interfaces/template.interface";
 import { ILike } from "typeorm";
 import { AppError } from "../errors/AppError.error";
-import { SupabaseStorageService } from "./SupabaseStorageService";
+import StorageService from "../services/storage.service";
 
 export class TemplateService {
+  private storageService: StorageService;
   private templateRepository = AppDataSource.getRepository(Template);
-  private storageService: SupabaseStorageService;
 
   constructor() {
-    this.storageService = new SupabaseStorageService();
+    this.storageService = new StorageService();
   }
 
-  // MÉTODO NOVO: Criar template com upload para o bucket
+  // Criar template com upload para o bucket
   async createWithUpload(uploadData: ITemplateUploadData): Promise<Template> {
     const bucketName = process.env.SUPABASE_BUCKET_TEMPLATES || "templates";
 
     try {
-      // 1. Faz upload do arquivo para o bucket Supabase
+      // 1. Upload do arquivo para o bucket
       const fileUrl = await this.storageService.uploadFileBuffer(
         bucketName,
         uploadData.fileBuffer,
@@ -30,7 +30,7 @@ export class TemplateService {
         uploadData.mimeType
       );
 
-      // 2. Cria o registro do template no banco de dados
+      // 2. Cria o registro do template no banco
       const templateData: TTemplateCreate = {
         name: uploadData.name,
         description: uploadData.description,
@@ -42,7 +42,7 @@ export class TemplateService {
 
       const template = this.templateRepository.create({
         ...templateData,
-        fileUrl, // URL do arquivo no bucket
+        fileUrl,
       });
 
       return await this.templateRepository.save(template);
@@ -89,14 +89,14 @@ export class TemplateService {
     const template = await this.readOne(id);
     if (!template) throw new AppError("Template not found", 404);
 
-    // REMOVER ARQUIVO DO BUCKET ANTES DE DESATIVAR
+    // Remove arquivo do bucket antes de desativar
     if (template.fileUrl) {
       try {
         const bucketName = process.env.SUPABASE_BUCKET_TEMPLATES || "templates";
         await this.storageService.deleteFile(bucketName, template.fileName);
       } catch (error) {
         console.error("Error deleting file from bucket:", error);
-        // Não lançamos erro aqui para não impedir a exclusão do registro
+        // Não lança erro para não impedir a exclusão do registro
       }
     }
 
@@ -106,35 +106,6 @@ export class TemplateService {
     });
   }
 
-  // MÉTODO NOVO: Download do arquivo do bucket
-  // async downloadFile(
-  //   id: string
-  // ): Promise<{ buffer: Buffer; template: Template }> {
-  //   const template = await this.readOne(id);
-  //   if (!template) {
-  //     throw new AppError("Template not found", 404);
-  //   }
-
-  //   if (!template.fileUrl) {
-  //     throw new AppError("File not available", 404);
-  //   }
-
-  //   try {
-  //     const bucketName = process.env.SUPABASE_BUCKET_TEMPLATES || "templates";
-  //     const buffer = await this.storageService.downloadFile(
-  //       bucketName,
-  //       template.fileName
-  //     );
-
-  //     return { buffer, template };
-  //   } catch (error) {
-  //     const errorMessage =
-  //       typeof error === "object" && error !== null && "message" in error
-  //         ? (error as { message?: string }).message
-  //         : String(error);
-  //     throw new AppError(`Failed to download file: ${errorMessage}`, 500);
-  //   }
-  // }
   async downloadFile(
     id: string
   ): Promise<{ buffer: Buffer; template: Template }> {
@@ -150,7 +121,7 @@ export class TemplateService {
     try {
       const bucketName = process.env.SUPABASE_BUCKET_TEMPLATES || "templates";
 
-      // EXTRAI o nome do arquivo da URL do Supabase
+      // Extrai nome do arquivo da URL do Supabase
       const fileNameFromUrl = this.extractFileNameFromUrl(template.fileUrl);
       const fileName = fileNameFromUrl || template.fileName;
 
@@ -161,10 +132,7 @@ export class TemplateService {
         usingFileName: fileName,
       });
 
-      const buffer = await this.storageService.downloadFile(
-        bucketName,
-        fileName
-      );
+      const buffer = await this.storageService.downloadFile(bucketName, fileName);
       return { buffer, template };
     } catch (error) {
       const errorMessage =
@@ -201,3 +169,5 @@ export class TemplateService {
     });
   }
 }
+
+export default TemplateService;
