@@ -11,6 +11,10 @@ import {
   documentReturnSchema,
   documentSchema,
 } from "../schemas/document.schema";
+import { Document } from "../entities/document.entity";
+import StorageService from "../services/storage.service";
+
+const storage = new StorageService();
 
 export class DocumentService {
   async create(data: TDocumentCreate, user: User): Promise<TDocument> {
@@ -22,7 +26,6 @@ export class DocumentService {
 
   async read(user: User): Promise<TDocumentList> {
     const documents = await documentRepository.find({ where: { user } });
-
     return documentListSchema.parse(documents);
   }
 
@@ -31,13 +34,36 @@ export class DocumentService {
     await documentRepository.save(documentUpdated);
 
     const { submissionDate } = data;
-
     if (submissionDate) return documentReturnSchema.parse(documentUpdated);
 
     return documentSchema.parse(documentUpdated);
   }
 
-  async remove(document: any): Promise<void> {
+  async remove(document: Document): Promise<void> {
     await documentRepository.remove(document);
+  }
+
+  // === Novo método: upload de anexo ===
+  async uploadAttachment(document: Document, file: Express.Multer.File): Promise<TDocument> {
+    const bucket = process.env.SUPABASE_BUCKET_DOCUMENTS || "documents";
+
+    // Faz upload para o Supabase via buffer
+    const fileUrl = await storage.uploadFileBuffer(
+      bucket,
+      file.buffer,
+      file.originalname,
+      file.mimetype
+    );
+
+    // Atualiza entidade Document
+    document.fileUrl = fileUrl;
+    document.fileName = file.originalname;
+    document.mimeType = file.mimetype;
+    document.fileSize = file.size;
+    document.fileUploadedAt = new Date();
+
+    await documentRepository.save(document);
+
+    return documentReturnSchema.parse(document);
   }
 }

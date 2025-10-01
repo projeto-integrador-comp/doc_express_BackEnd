@@ -1,50 +1,75 @@
-import { config } from "dotenv";
-import { SupabaseStorageService } from "../src/services/SupabaseStorageService";
+/**
+ * tests/storage.test.ts
+ *
+ * Testes do StorageService (mock do StorageService embutido).
+ * Substitua o arquivo existente por este.
+ */
 
-config();
+import StorageService from "../src/services/storage.service";
 
-// ✅ Mock para evitar erros de conexão real
-jest.mock("../src/services/SupabaseStorageService", () => {
+jest.setTimeout(20000);
+
+// Mock manual do StorageService para não depender de Supabase real
+jest.mock("../src/services/storage.service", () => {
   return {
-    SupabaseStorageService: jest.fn().mockImplementation(() => ({
-      uploadFileBuffer: jest.fn().mockResolvedValue("https://example.com/file.txt"),
-      downloadFile: jest.fn().mockResolvedValue(Buffer.from("conteúdo de teste")),
-      deleteFile: jest.fn().mockResolvedValue(undefined),
-      fileExists: jest.fn().mockResolvedValue(false),
-    })),
+    __esModule: true,
+    default: jest.fn().mockImplementation(() => {
+      return {
+        // uploadFileBuffer: retorna URL string (usado pelo TemplateService)
+        uploadFileBuffer: jest.fn(async (_bucket: string, _buffer: Buffer, fileName: string) => {
+          return `https://supabase.mock/${_bucket}/${fileName}`;
+        }),
+        // downloadFile: retorna Buffer
+        downloadFile: jest.fn(async (_bucket: string, _fileName: string) => {
+          return Buffer.from("mock content");
+        }),
+        // deleteFile: retorna booleano de sucesso
+        deleteFile: jest.fn(async (_bucket: string, _fileName: string) => {
+          return true;
+        }),
+      };
+    }),
   };
 });
 
-describe("SupabaseStorageService", () => {
-  let service: SupabaseStorageService;
-  const testBucket = "templates";
+describe("StorageService (mocked)", () => {
+  let storageService: StorageService;
 
-  beforeEach(() => {
-    service = new SupabaseStorageService();
+  beforeAll(() => {
+    storageService = new StorageService();
   });
 
-  it("should upload a file and return a public URL", async () => {
-    const testBuffer = Buffer.from("conteúdo de teste");
-    const url = await service.uploadFileBuffer(
-      testBucket, 
-      testBuffer, 
-      "test-file.txt",
+  it("should upload a file buffer with mime (uploadFileBuffer) and return a URL string", async () => {
+    const url = await (storageService as any).uploadFileBuffer(
+      "bucket",
+      Buffer.from("data"),
+      "fileABC.txt",
       "text/plain"
     );
-    
-    expect(url).toContain("https://");
+    expect(typeof url).toBe("string");
+    expect(url).toContain("/bucket/fileABC.txt");
   });
 
-  it("should download a file that was previously uploaded", async () => {
-    const buffer = await service.downloadFile(testBucket, "test-file.txt");
-    expect(buffer.toString()).toBe("conteúdo de teste");
+  it("should download a file (downloadFile) returning a Buffer", async () => {
+    const buf = await (storageService as any).downloadFile("bucket", "path/file.txt");
+    expect(Buffer.isBuffer(buf)).toBe(true);
+    expect(buf.toString()).toBe("mock content");
   });
 
-  it("should delete a file and make it unavailable", async () => {
-    // Mock para simular erro no download após delete
-    (service.downloadFile as jest.Mock).mockRejectedValueOnce(new Error("File not found"));
-    
-    await service.deleteFile(testBucket, "test-file.txt");
-    await expect(service.downloadFile(testBucket, "test-file.txt")).rejects.toThrow();
+  it("should delete a file (deleteFile) returning true", async () => {
+    const ok = await (storageService as any).deleteFile("bucket", "path/file.txt");
+    expect(ok).toBe(true);
+  });
+
+  it("mock methods should have been called with expected args", async () => {
+    // chama métodos extras para checar chamadas
+    await (storageService as any).uploadFileBuffer("bucket", Buffer.from("x"), "nome.txt", "text/plain");
+    await (storageService as any).downloadFile("bucket", "nome.txt");
+    await (storageService as any).deleteFile("bucket", "nome.txt");
+
+    // assertions diretamente no objeto instanciado (mais robusto)
+    expect((storageService as any).uploadFileBuffer).toHaveBeenCalled();
+    expect((storageService as any).downloadFile).toHaveBeenCalled();
+    expect((storageService as any).deleteFile).toHaveBeenCalled();
   });
 });

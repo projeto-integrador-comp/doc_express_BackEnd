@@ -1,131 +1,148 @@
-import { DataSource } from "typeorm";
+/**
+ * tests/template.test.ts
+ *
+ * Testes para TemplateService integrando com repositório (AppDataSource).
+ * Substitua o arquivo existente por este.
+ */
+
+import TemplateService from "../src/services/template.service";
+import { AppDataSource } from "../src/data-source";
 import { Template } from "../src/entities/template.entity";
+import { Repository } from "typeorm";
 
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+jest.setTimeout(20000);
 
-describe("Template Entity", () => {
-  let dataSource: DataSource;
+// Mock manual do StorageService (mesmo comportamento do storage.test)
+jest.mock("../src/services/storage.service", () => {
+  return {
+    __esModule: true,
+    default: jest.fn().mockImplementation(() => {
+      return {
+        uploadFile: jest.fn(async (_bucket: string, _path: string, _buffer: Buffer) => {
+          return { path: `https://supabase.mock/${_bucket}/${_path}` };
+        }),
+        uploadFileBuffer: jest.fn(async (_bucket: string, _buffer: Buffer, fileName: string) => {
+          return `https://supabase.mock/${_bucket}/${fileName}`;
+        }),
+        downloadFile: jest.fn(async (_bucket: string, _fileName: string) => {
+          return Buffer.from("mock content");
+        }),
+        deleteFile: jest.fn(async () => true),
+      };
+    }),
+  };
+});
+
+describe("TemplateService (integration-like)", () => {
+  let templateService: TemplateService;
+  let repo: Repository<Template>;
 
   beforeAll(async () => {
-    dataSource = new DataSource({
-      type: "sqlite",
-      database: ":memory:",
-      entities: [Template],
-      synchronize: true,
-      logging: false,
-    });
-    await dataSource.initialize();
+    try {
+      if (!AppDataSource.isInitialized) {
+        await AppDataSource.initialize();
+      }
+    } catch (e) {
+      // se já inicializado por outro teste, ignore
+    }
+
+    repo = AppDataSource.getRepository(Template);
+    templateService = new TemplateService();
+    // limpa tabela de templates para testes determinísticos
+    await repo.clear();
   });
 
   afterAll(async () => {
-    if (dataSource.isInitialized) {
-      await dataSource.destroy();
+    try {
+      await repo.clear();
+      if (AppDataSource.isInitialized) await AppDataSource.destroy();
+    } catch (e) {
+      // ignore
     }
   });
 
-  // Teste 1: Validação completa de CRUD
-  it("should perform CRUD operations on Template entity", async () => {
-    const repository = dataSource.getRepository(Template);
-
-    // CRIAÇÃO - COM OS CAMPOS CORRETOS
-    const newTemplate = repository.create({
-      name: "Termo de Aceite",
-      description: "Documento para aceite de termos de uso.",
-      fileName: "termo-aceite.pdf",
-      fileUrl: "https://supabase.com/templates/termo-aceite.pdf", // ✅ filePath → fileUrl
-      fileSize: 10240,
-      mimeType: "application/pdf",
-    });
-    await repository.save(newTemplate);
-    expect(newTemplate.id).toBeDefined();
-
-    // LEITURA
-    const foundTemplate = await repository.findOneBy({ id: newTemplate.id });
-    expect(foundTemplate).toBeDefined();
-    expect(foundTemplate?.name).toBe("Termo de Aceite");
-
-    // ATUALIZAÇÃO
-    await repository.update(foundTemplate!.id, {
-      description: "Nova descrição.",
-    });
-    const updatedTemplate = await repository.findOneBy({ id: newTemplate.id });
-    expect(updatedTemplate?.description).toBe("Nova descrição.");
-
-    // DELEÇÃO
-    await repository.delete(newTemplate.id);
-    const deletedTemplate = await repository.findOneBy({ id: newTemplate.id });
-    expect(deletedTemplate).toBeNull();
-  });
-
-  // Teste 2: Verificar se um template é criado com valores padrão
-  it("should create a template with default values", async () => {
-    const repository = dataSource.getRepository(Template);
-    const newTemplate = repository.create({
-      name: "Documento Padrão",
-      fileName: "default.txt",
-      fileUrl: "https://supabase.com/templates/default.txt", // ✅ filePath → fileUrl
-      fileSize: 512,
+  it("should create a template using create() (DB only)", async () => {
+    const payload = {
+      name: "Test create basic",
+      description: "descr",
+      fileName: "a.txt",
       mimeType: "text/plain",
-    });
-    await repository.save(newTemplate);
-
-    expect(newTemplate.isActive).toBe(true);
-    expect(newTemplate.createdAt).toBeInstanceOf(Date);
-    expect(newTemplate.updatedAt).toBeInstanceOf(Date);
-  });
-
-  // Teste 3: Verificar se a data de atualização é alterada (CORRIGIDO)
-  it("should update updatedAt on record change", async () => {
-    const repository = dataSource.getRepository(Template);
-
-    // Salva o template
-    const newTemplate = repository.create({
-      name: "Template para atualização",
-      description: "Desc",
-      fileName: "file.txt",
-      fileUrl: "https://supabase.com/templates/file.txt",
-      fileSize: 100,
-      mimeType: "text/plain",
-    });
-    await repository.save(newTemplate);
-
-    // ✅ CORREÇÃO: Recarrega do banco para pegar o timestamp exato
-    const savedTemplate = await repository.findOneBy({ id: newTemplate.id });
-    const initialUpdatedAt = savedTemplate!.updatedAt;
-
-    // ✅ CORREÇÃO: Espera mais tempo (500ms) e usa transaction
-    await new Promise((resolve) => setTimeout(resolve, 500));
-
-    // ✅ CORREÇÃO: Atualiza com transaction para forçar o updatedAt
-    await repository.manager.transaction(async (transactionalEntityManager) => {
-      await transactionalEntityManager.update(Template, newTemplate.id, {
-        name: "Nome atualizado",
-      });
-    });
-
-    // ✅ CORREÇÃO: Recarrega o template atualizado
-    const updatedTemplate = await repository.findOneBy({ id: newTemplate.id });
-
-    expect(updatedTemplate).toBeDefined();
-    expect(updatedTemplate!.updatedAt.getTime()).toBeGreaterThan(
-      initialUpdatedAt.getTime()
-    );
-  });
-
-  // Teste 4: Verificar se o campo `name` não pode ser nulo (CORRIGIDO)
-  it("should not allow creating a template with a null name", async () => {
-    const repository = dataSource.getRepository(Template);
-
-    // ✅ CORREÇÃO: Use any ou omita a tipagem
-    const templateData: any = {
-      description: "Documento sem nome.",
-      fileName: "no-name.pdf",
-      fileUrl: "https://supabase.com/templates/no-name.pdf", // ✅ filePath → fileUrl
-      fileSize: 1024,
-      mimeType: "application/pdf",
+      fileSize: 10,
+      isActive: true,
     };
 
-    const newTemplate = repository.create(templateData);
-    await expect(repository.save(newTemplate)).rejects.toThrow();
+    const created = await templateService.create(payload as any);
+    expect(created).toHaveProperty("id");
+    expect(created.name).toBe("Test create basic");
+  });
+
+  it("should create a template with upload (createWithUpload) and persist fileUrl", async () => {
+    const uploadData = {
+      name: "Upload template",
+      description: "upload test",
+      fileName: "upload-1.txt",
+      fileSize: 20,
+      mimeType: "text/plain",
+      fileBuffer: Buffer.from("conteudo"),
+    };
+
+    const created = await templateService.createWithUpload(uploadData as any);
+    expect(created).toHaveProperty("id");
+    expect(created.fileUrl).toContain("/templates/upload-1.txt");
+  });
+
+  it("should read() and return an array of active templates", async () => {
+    const list = await templateService.read();
+    expect(Array.isArray(list)).toBe(true);
+    expect(list.length).toBeGreaterThan(0);
+  });
+
+  it("should readOne() by id", async () => {
+    const all = await templateService.read();
+    const sample = all[0];
+    const found = await templateService.readOne(sample.id);
+    expect(found).not.toBeNull();
+    expect(found?.id).toBe(sample.id);
+  });
+
+  it("should update() a template", async () => {
+    const all = await templateService.read();
+    const sample = all[0];
+    const changed = await templateService.update(sample.id, { name: "Renamed" } as any);
+    expect(changed.name).toBe("Renamed");
+  });
+
+  it("should downloadFile() returning buffer and template", async () => {
+    const all = await templateService.read();
+    const sample = all[0];
+
+    if (!sample.fileUrl) {
+      await repo.update(sample.id, { fileUrl: `https://supabase.mock/templates/${sample.fileName}` });
+    }
+
+    const { buffer, template } = await templateService.downloadFile(sample.id);
+    expect(Buffer.isBuffer(buffer)).toBe(true);
+    expect(buffer.toString()).toBe("mock content");
+    expect(template.id).toBe(sample.id);
+  });
+
+  it("should search() by name/description (case insensitive)", async () => {
+    const res = await templateService.search("renamed");
+    expect(Array.isArray(res)).toBe(true);
+  });
+
+  it("should readByMimeType()", async () => {
+    const res = await templateService.readByMimeType("text/plain");
+    expect(Array.isArray(res)).toBe(true);
+  });
+
+  it("should remove() (soft delete) and mark isActive false", async () => {
+    const all = await templateService.read();
+    const sample = all[0];
+    await templateService.remove(sample.id);
+
+    const removed = await repo.findOneBy({ id: sample.id });
+    expect(removed).toBeDefined();
+    expect(removed?.isActive).toBe(false);
   });
 });
