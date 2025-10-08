@@ -12,7 +12,7 @@
     "migration:revert": "npm run typeorm -- migration:revert -d src/data-source.ts",
     "migration:show": "npm run typeorm -- migration:show -d src/data-source.ts",
     "schema:sync": "npm run typeorm -- schema:sync -d src/data-source.ts",
-    "start": "npm run build && npm run migration:run && node dist/server.js",
+    "start": "npm run build && sleep 25 && npm run migration:run && node dist/server.js",
     "build": "tsc",
     "test": "jest --runInBand"
   },
