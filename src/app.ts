@@ -12,13 +12,21 @@ import templateRouter from "./routes/template.route";
 
 const app: Application = express();
 
-app.use(json());
+// ✅ CORS PRIMEIRO - antes de qualquer middleware
 app.use(
   cors({
     origin: ["http://localhost:5173", "https://pi-creche.vercel.app"],
     credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "Accept"],
   })
 );
+
+// ✅ Handler explícito para requisições OPTIONS (Preflight)
+app.options("*", cors());
+
+// ✅ Depois os outros middlewares
+app.use(json());
 
 app.use("/users", userRouter);
 app.use("/login", loginRouter);
