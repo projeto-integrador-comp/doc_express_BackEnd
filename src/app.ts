@@ -9,6 +9,7 @@ import { profileRouter } from "./routes/profile.route";
 import { documentRouter } from "./routes/document.route";
 import templateRouter from "./routes/template.route";
 // import path from "path";
+import { createClient } from "@supabase/supabase-js";
 
 const app: Application = express();
 
@@ -21,6 +22,46 @@ app.use(
     allowedHeaders: ["Content-Type", "Authorization", "Accept"],
   })
 );
+
+// Health check que mantém o banco vivo
+app.get("/health", async (req, res) => {
+  try {
+    const supabase = createClient(
+      process.env.SUPABASE_URL!,
+      process.env.SUPABASE_ANON_KEY!
+    );
+
+    // Query simples para testar conexão com o banco
+    const { data, error } = await supabase
+      .from("users") // use qualquer tabela que exista
+      .select("id")
+      .limit(1);
+
+    if (error) throw error;
+
+    res.status(200).json({
+      status: "healthy",
+      database: "connected",
+      timestamp: new Date().toISOString(),
+      region: process.env.REGION || "unknown",
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      status: "unhealthy",
+      database: "disconnected",
+      error: error.message,
+      timestamp: new Date().toISOString(),
+    });
+  }
+});
+
+// Health check simples (fallback)
+app.get("/ping", (req, res) => {
+  res.status(200).json({
+    message: "pong",
+    timestamp: new Date().toISOString(),
+  });
+});
 
 // ✅ Handler explícito para requisições OPTIONS (Preflight)
 app.options("*", cors());
