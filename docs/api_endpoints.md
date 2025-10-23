@@ -1,269 +1,513 @@
-# API Endpoints — DocExpress
+# API Endpoints
 
-Este documento reúne a documentação dos endpoints da **DocExpress API (backend)**.
+Base URL (desenvolvimento): `http://localhost:3000`
 
-As chamadas cobrem operações REST típicas com respostas em JSON e autenticação via header `Authorization: Bearer <token>`.
+Autenticação: **JWT Bearer** via header `Authorization: Bearer <token>`.
 
----
 
-## Formato de erro padrão
+> Nota: os exemplos assumem execução local. Ajuste a URL conforme seu ambiente.
 
+## Index
+- [Login](#login)
+- [Profile](#profile)
+- [Users](#users)
+- [Documents](#documents)
+- [Templates](#templates)
+
+## Login
+
+
+### POST /login
+
+Gera token JWT e retorna o usuário autenticado com seus documentos.
+
+**Auth**: _Não requer_
+
+**Headers**:
+- `Content-Type: application/json`
+
+**Body**
 ```json
 {
-  "status": "error",
-  "message": "Descrição curta do erro",
-  "errors": [
-    { "field": "nomeDoCampo", "message": "mensagem de validação" }
-  ]
+  "email": "user@example.com",
+  "password": "plaintext-or-hash"
 }
 ```
 
----
-
-## Autenticação
-
-### POST /auth/login
-
-Login de usuário — retorna JWT.
-
-* Body (JSON):
-
+**Responses**
+- `200 OK`:
 ```json
-{ "email": "user@example.com", "password": "s3nh4" }
+{
+  "token": "<jwt>",
+  "user": {
+    "id": "uuid",
+    "name": "Alice",
+    "email": "user@example.com",
+    "admin": false,
+    "documents": [
+      {
+        "id": "uuid",
+        "submissionDate": "2025-01-31",
+        "documentName": "RG",
+        "note": "",
+        "delivered": false
+      }
+    ]
+  }
+}
+```
+- `401 Unauthorized`: credenciais inválidas
+- `404 Not Found`: usuário inexistente (pode retornar 401 a depender da implementação)
+
+**cURL**
+```bash
+curl -X POST "http://localhost:3000/login" \
+  -H "Content-Type: application/json" \
+  -d '{"email":"user@example.com","password":"secret"}'
 ```
 
-* Response 200:
 
+## Profile
+
+
+### GET /profile
+
+Retorna o usuário autenticado (sem token) incluindo documentos.
+
+**Auth**: `Bearer <token>`
+
+**Headers**:
+- `Authorization: Bearer <token>`
+
+**Responses**
+- `200 OK`:
 ```json
-{ "token": "<jwt>", "user": { "id": 1, "email": "user@example.com", "name": "Fulano" } }
+{
+  "user": {
+    "id": "uuid",
+    "name": "Alice",
+    "email": "user@example.com",
+    "admin": false,
+    "documents": []
+  }
+}
+```
+- `401 Unauthorized`: token ausente ou inválido
+
+**cURL**
+```bash
+curl "http://localhost:3000/profile" -H "Authorization: Bearer $TOKEN"
 ```
 
-* Erros: 400 (campos faltando), 401 (credenciais inválidas)
 
-### POST /auth/register
+## Users
 
-Criação de conta (quando aplicável).
-
-* Body:
-
-```json
-{ "name": "Fulano", "email": "user@example.com", "password": "s3nh4" }
-```
-
-* Response: 201 com objeto usuário (sem senha) e token opcional.
-
-### GET /auth/me
-
-Retorna dados do usuário autenticado.
-
-* Headers: `Authorization: Bearer <token>`
-* Response 200: objeto `user`.
-
----
-
-## Usuários (Users)
-
-**Base path**: `/users`
-
-### GET /users
-
-Lista usuários.
-
-* Query params suportados: `page`, `limit`, `q` (busca por nome/email), `sort` (ex: `createdAt:desc`).
-* Response 200:
-
-```json
-{ "data": [ { "id":1, "name":"Fulano", "email":"x@x" } ], "meta": { "page":1, "limit":20, "total":123 } }
-```
-
-### GET /users/\:id
-
-Obter usuário por id.
-
-* Response 200: objeto usuário.
-* Erros: 404 se não encontrado.
 
 ### POST /users
 
-Criar usuário (admin).
+Cria novo usuário.
 
-* Body exemplo:
+**Auth**: _Não requer_
 
+**Headers**:
+- `Content-Type: application/json`
+
+**Body** (`userCreateSchema`)
 ```json
-{ "name":"Fulano", "email":"x@x.com", "password":"s3nh4", "role":"admin" }
+{
+  "name": "Alice",
+  "email": "alice@example.com",
+  "password": "secret",
+  "admin": false
+}
 ```
 
-* Response 201: objeto criado.
+**Responses**
+- `201 Created` (`userReturnSchema`):
+```json
+{
+  "id": "uuid",
+  "name": "Alice",
+  "email": "alice@example.com",
+  "admin": false
+}
+```
+- `400 Bad Request`: violação de schema (Zod)
+- `409 Conflict`: e-mail já cadastrado
 
-### PUT /users/\:id
+**cURL**
+```bash
+curl -X POST "http://localhost:3000/users" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Alice","email":"alice@example.com","password":"secret"}'
+```
 
-Atualizar usuário.
 
-* Body: campos permitidos (name, email, role, etc.).
-* Response: 200 com usuário atualizado.
+### GET /users
 
-### DELETE /users/\:id
+Lista usuários (restrito a admin).
 
-Remover usuário (soft delete, quando aplicável).
+**Auth**: `Bearer <token>` (admin)
 
-* Response: 204 (sem conteúdo) ou 200 com confirmação.
+**Headers**:
+- `Authorization: Bearer <token>`
 
----
+**Responses**
+- `200 OK` (`userListSchema`):
+```json
+[
+  {"id":"uuid","name":"Alice","email":"alice@example.com","admin":false}
+]
+```
+- `401 Unauthorized`
+- `403 Forbidden`: permissão insuficiente
 
-## Documentos (Documents)
+**cURL**
+```bash
+curl "http://localhost:3000/users" -H "Authorization: Bearer $ADMIN_TOKEN"
+```
 
-**Base path**: `/documents`
 
-Os documentos possuem metadados como: `submissionDate`, `note`, `delivered` (boolean), `ownerId`, `templateId`, e `files` (referência a storage).
+### GET /users/:id
 
-### GET /documents
+Obtém um usuário por ID (self ou admin).
 
-Listar documentos com filtros:
+**Auth**: `Bearer <token>`
 
-* Query params: `page`, `limit`, `status`, `ownerId`, `fromDate`, `toDate`, `q`.
+**Path Params**:
+- `id` (uuid)
 
-### GET /documents/\:id
+**Responses**
+- `200 OK` (`userReturnSchema`)
+- `401 Unauthorized`
+- `403 Forbidden`: quando não é admin nem o próprio usuário
+- `404 Not Found`
 
-Detalhes do documento (inclui metadados e links de arquivo).
+**cURL**
+```bash
+curl "http://localhost:3000/users/<uuid>" -H "Authorization: Bearer $TOKEN"
+```
+
+
+### PATCH /users/:id
+
+Atualiza campos do usuário (self ou admin). Campo `admin` não é atualizável por este endpoint.
+
+**Auth**: `Bearer <token>`
+
+**Headers**:
+- `Content-Type: application/json`
+- `Authorization: Bearer <token>`
+
+**Body** (`userUpdateSchema`, parcial)
+```json
+{
+  "name": "Alice B.",
+  "email": "alice.b@example.com",
+  "password": "new-secret"
+}
+```
+
+**Responses**
+- `200 OK` (`userReturnSchema`)
+- `400 Bad Request`
+- `401 Unauthorized`
+- `403 Forbidden`
+- `404 Not Found`
+
+**cURL**
+```bash
+curl -X PATCH "http://localhost:3000/users/<uuid>" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Alice B."}'
+```
+
+
+### DELETE /users/:id
+
+Remove o usuário (self ou admin).
+
+**Auth**: `Bearer <token>`
+
+**Responses**
+- `204 No Content`
+- `401 Unauthorized`
+- `403 Forbidden`
+- `404 Not Found`
+
+**cURL**
+```bash
+curl -X DELETE "http://localhost:3000/users/<uuid>" -H "Authorization: Bearer $TOKEN"
+```
+
+
+## Documents
+
 
 ### POST /documents
 
-Criar novo documento (JSON + referência de arquivo já no storage ou usando multipart/form-data):
+Cria documento para o usuário autenticado.
 
-* Exemplo body (JSON):
+**Auth**: `Bearer <token>`
 
+**Headers**:
+- `Content-Type: application/json`
+- `Authorization: Bearer <token>`
+
+**Body** (`documentCreateSchema`)
 ```json
 {
-  "title": "Entrega Contrato",
-  "ownerId": 3,
-  "submissionDate": "2025-09-01",
-  "note": "Entrega via correio",
-  "delivered": false,
-  "templateId": 2
+  "submissionDate": "2025-01-31",
+  "documentName": "RG",
+  "note": "",
+  "delivered": false
 }
 ```
 
-* Se upload direto for suportado via multipart, enviar `file` no form.
+**Responses**
+- `201 Created` (`documentReturnSchema`)
+- `400 Bad Request`
+- `401 Unauthorized`
 
-### PUT /documents/\:id
+**cURL**
+```bash
+curl -X POST "http://localhost:3000/documents" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"submissionDate":"2025-01-31","documentName":"RG"}'
+```
 
-Atualizar metadados do documento.
 
-### DELETE /documents/\:id
+### GET /documents
 
-Remover documento (soft delete ou hard delete conforme política).
+Lista documentos do usuário autenticado.
 
----
+**Auth**: `Bearer <token>`
 
-## Templates (repositório de modelos)
+**Responses**
+- `200 OK` (`documentListSchema`)
+- `401 Unauthorized`
 
-**Base path**: `/templates`
+**cURL**
+```bash
+curl "http://localhost:3000/documents" -H "Authorization: Bearer $TOKEN"
+```
 
-Os templates são armazenados em Supabase Storage (bucket `templates`), e a API mantém metadados na DB.
 
-### GET /templates
+### PATCH /documents/:id
 
-Listar templates.
+Atualiza metadados do documento do usuário autenticado.
+
+**Auth**: `Bearer <token>`
+
+**Path Params**:
+- `id` (uuid)
+
+**Body** (`documentUpdateSchema`, parcial)
+```json
+{
+  "documentName": "RG (frente e verso)",
+  "delivered": true
+}
+```
+
+**Responses**
+- `200 OK` (`documentReturnSchema`)
+- `400 Bad Request`
+- `401 Unauthorized`
+- `404 Not Found`
+
+**cURL**
+```bash
+curl -X PATCH "http://localhost:3000/documents/<uuid>" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"delivered":true}'
+```
+
+
+### DELETE /documents/:id
+
+Remove documento do usuário autenticado.
+
+**Auth**: `Bearer <token>`
+
+**Responses**
+- `204 No Content`
+- `401 Unauthorized`
+- `404 Not Found`
+
+**cURL**
+```bash
+curl -X DELETE "http://localhost:3000/documents/<uuid>" -H "Authorization: Bearer $TOKEN"
+```
+
+
+### POST /documents/:id/attachment
+
+Faz upload de anexo (arquivo) ao documento. Armazena em bucket (Supabase) e preenche `fileUrl`, `fileName`, `mimeType`, `fileSize`, `fileUploadedAt`.
+
+**Auth**: `Bearer <token>`
+
+**Headers**:
+- `Authorization: Bearer <token>`
+- `Content-Type: multipart/form-data`
+
+**Path Params**:
+- `id` (uuid)
+
+**Form Data**
+- `file`: arquivo a ser enviado
+
+**Responses**
+- `200 OK` (`documentReturnSchema` atualizado)
+- `400 Bad Request`: ausência de arquivo
+- `401 Unauthorized`
+- `404 Not Found`: documento não pertence ao usuário
+
+**cURL**
+```bash
+curl -X POST "http://localhost:3000/documents/<uuid>/attachment" \
+  -H "Authorization: Bearer $TOKEN" \
+  -F "file=@/caminho/para/arquivo.pdf"
+```
+
+
+## Templates
+
+
+### GET /templates/:id/download
+
+Download público do arquivo de template.
+
+**Auth**: _Não requer_
+
+**Path Params**:
+- `id` (uuid)
+
+**Responses**
+- `200 OK`: binário do arquivo (headers `Content-Type` e `Content-Disposition`)
+- `404 Not Found`: template não encontrado ou sem arquivo
+
+**cURL**
+```bash
+curl -L "http://localhost:3000/templates/<uuid>/download" -o template.bin
+```
+
 
 ### POST /templates
 
-Upload de template (multipart/form-data com arquivo e metadados).
+Cria template (admin) com upload de arquivo.
 
-* Campos: `name`, `description`, `file`.
-* Fluxo: arquivo salvo no Supabase + registro no banco com `path`/`url`.
+**Auth**: `Bearer <token>` (admin)
 
-### GET /templates/\:id/download
+**Headers**:
+- `Authorization: Bearer <token>`
+- `Content-Type: multipart/form-data`
 
-Gera link para download (presigned URL) ou faz proxy do arquivo tornando o download transparente.
+**Form Data**
+- `file`: arquivo a ser enviado (tipos permitidos: PDF, DOCX, XLSX)
+- `name`: string (5-50)
+- `description`: string (1-255)
 
-### DELETE /templates/\:id
+**Responses**
+- `201 Created` (`templateReturnSchema`)
+- `400 Bad Request`: validação Zod (ex.: tipo de arquivo)
+- `401 Unauthorized`
+- `403 Forbidden`: não-admin
 
-Remover template e deletar arquivo no storage.
-
----
-
-## Uploads genéricos (bucket `uploads`)
-
-* Endpoint para upload direto: `POST /uploads` (multipart) — recebe arquivo, salva no bucket `uploads` e retorna `fileId`/`url`.
-* Alternativa: `GET /uploads/presign` para obter URL presignada que o cliente usará para enviar o arquivo diretamente ao Supabase.
-
----
-
-## Health & Admin
-
-* GET /health (ou /status): retorna `200 OK` com informações básicas (uptime, versão, DB connection).
-* GET /admin/migrations/status: status das migrations (quando implementado).
-
----
-
-## Segurança
-
-* JWT em `Authorization` Header.
-* Roles: `user`, `admin` (exemplo). Endpoints de administração exigem role `admin`.
-
----
-
-## Cabeçalhos e exemplos de cURL
-
-Login (obter token):
-
+**cURL**
 ```bash
-curl -X POST http://localhost:3000/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"user@example.com","password":"s3nh4"}'
+curl -X POST "http://localhost:3000/templates" \
+  -H "Authorization: Bearer $ADMIN_TOKEN" \
+  -F "file=@/caminho/modelo.docx" \
+  -F "name=Modelo de RG" \
+  -F "description=Modelo oficial"
 ```
 
-Usando token:
 
+### GET /templates
+
+Lista templates (admin).
+
+**Auth**: `Bearer <token>` (admin)
+
+**Responses**
+- `200 OK`: array de templates
+- `401 Unauthorized`
+- `403 Forbidden`
+
+
+### GET /templates/search
+
+Busca templates por nome/descrição.
+
+**Auth**: `Bearer <token>` (admin)
+
+**Query Params**:
+- `q`: termo de busca (string)
+
+**Responses**
+- `200 OK`: array de templates
+- `401 Unauthorized`
+- `403 Forbidden`
+
+**cURL**
 ```bash
-curl http://localhost:3000/documents -H "Authorization: Bearer <token>"
+curl "http://localhost:3000/templates/search?q=RG" -H "Authorization: Bearer $ADMIN_TOKEN"
 ```
 
----
 
-## Variáveis de ambiente importantes
+### GET /templates/:id
 
-Trecho adaptado do README: `PORT`, `DATABASE_URL`, `SECRET_KEY`, `SUPABASE_URL`, `SUPABASE_KEY`, `SUPABASE_BUCKET_TEMPLATES`, `SUPABASE_BUCKET_UPLOADS`.
+Retorna um template específico.
 
----
+**Auth**: `Bearer <token>` (admin)
+
+**Path Params**:
+- `id` (uuid)
+
+**Responses**
+- `200 OK` (`templateReturnSchema`)
+- `401 Unauthorized`
+- `403 Forbidden`
+- `404 Not Found`
 
 
-### 📎 Novo endpoint — Upload de anexo em Document (DEV-019 a DEV-023)
+### PATCH /templates/:id
 
-**POST /documents/:id/upload**
+Atualiza dados do template.
 
-Permite anexar um arquivo a um documento existente, armazenando o arquivo no Supabase (bucket `uploads`) 
-e salvando metadados (`fileUrl`, `fileName`, `mimeType`, `fileSize`, `fileUploadedAt`) na tabela `documents`.
+**Auth**: `Bearer <token>` (admin)
 
-* **Headers**:  
-  `Authorization: Bearer <token>`  
-  `Content-Type: multipart/form-data`
+**Headers**:
+- `Content-Type: application/json`
 
-* **Body (form-data)**:
-  - `file` (campo obrigatório — binário)
-  - Metadados adicionais opcionais podem ser enviados (ex.: descrição)
-
-* **Exemplo de requisição (cURL)**:
-
-```bash
-curl -X POST http://localhost:3000/documents/123/upload   -H "Authorization: Bearer <token>"   -F "file=@contrato.pdf"
-```
-
-* **Exemplo de resposta (200/201)**:
-
+**Body** (`templateUpdateSchema`, parcial)
 ```json
 {
-  "id": "123",
-  "title": "Entrega Contrato",
-  "fileUrl": "https://supabase.mock/uploads/contrato.pdf",
-  "fileName": "contrato.pdf",
-  "mimeType": "application/pdf",
-  "fileSize": 234567,
-  "fileUploadedAt": "2025-10-01T18:30:00.000Z"
+  "name": "Novo Nome",
+  "description": "Nova descrição"
 }
 ```
 
-* **Erros**:
-  - `400` se não houver arquivo.
-  - `401` se usuário não autenticado ou não for dono do documento.
-  - `404` se documento não existir.
+**Responses**
+- `200 OK` (`templateReturnSchema`)
+- `400 Bad Request`
+- `401 Unauthorized`
+- `403 Forbidden`
+- `404 Not Found`
+
+
+### DELETE /templates/:id
+
+Remove template (soft-delete ou hard-delete conforme service).
+
+**Auth**: `Bearer <token>` (admin)
+
+**Responses**
+- `204 No Content` _ou_ `200 OK` com recurso removido
+- `401 Unauthorized`
+- `403 Forbidden`
+- `404 Not Found`
