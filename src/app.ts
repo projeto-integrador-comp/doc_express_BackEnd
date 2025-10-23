@@ -16,7 +16,10 @@ const app: Application = express();
 // ✅ CORS PRIMEIRO - antes de qualquer middleware
 app.use(
   cors({
-    origin: ["http://localhost:5173", "https://pi-creche.vercel.app"],
+    origin: [
+      "http://localhost:5173",
+      /\.vercel\.app$/, // ← Isso aqui aceita pi-creche.vercel.app, doc-express-frontend-1cbeeypwb.vercel.app, etc.
+    ],
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "Accept"],
