@@ -2,24 +2,25 @@
 
 ![Node.js](https://img.shields.io/badge/Node.js-18%2B-brightgreen?logo=node.js) ![TypeScript](https://img.shields.io/badge/TypeScript-blue?logo=typescript) ![Express](https://img.shields.io/badge/Express-black?logo=express) ![TypeORM](https://img.shields.io/badge/TypeORM-0.3.x-lightgrey) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-blue?logo=postgresql) ![Docker](https://img.shields.io/badge/Docker-Compose-blue?logo=docker) ![Status](https://img.shields.io/badge/Status-Atualizado-green)
 
-DocExpress é a **API backend** do projeto de gestão documental, construída em **Node.js + TypeScript** com **Express** e **TypeORM** (PostgreSQL). O projeto inclui **autenticação JWT**, **validação com Zod**, camadas bem definidas (Router → Middlewares → Controller → Service → Repository/Entities) e integração com *object storage* (Supabase Storage por padrão).
+DocExpress é a **API backend** do projeto de gestão documental, construída em **Node.js + TypeScript** com **Express** e **TypeORM** (PostgreSQL). O projeto inclui **autenticação JWT**, **validação com Zod**, camadas bem definidas (Router → Middlewares → Controller → Service → Repository/Entities) e integração com _object storage_ (Supabase Storage por padrão).
 
 ---
 
-
 ## ✨ Observação sobre Storage
-A documentação é **agnóstica ao provedor** de storage. As variáveis de ambiente seguem o prefixo `STORAGE_*` ou `SUPABASE_*`, permitindo migrar de plataforma sem alterar fluxos de código. No projeto atual, **Supabase Storage** está configurado como provedor de arquivos para *templates* e *uploads*.
 
+A documentação é **agnóstica ao provedor** de storage. As variáveis de ambiente seguem o prefixo `STORAGE_*` ou `SUPABASE_*`, permitindo migrar de plataforma sem alterar fluxos de código. No projeto atual, **Supabase Storage** está configurado como provedor de arquivos para _templates_ e _uploads_.
 
 ## ⚙️ Pré-requisitos
+
 - Docker & Docker Compose (recomendado)
 - Node.js 18+ (para execução local)
 - Banco PostgreSQL acessível
 - Credenciais do provedor de storage (ex.: Supabase)
 
-
 ## 🚀 Executando o projeto
+
 ### Via Docker (recomendado)
+
 ```bash
 cp .env.example .env
 # edite as variáveis
@@ -27,19 +28,21 @@ docker compose up -d --build
 # aplicar migrations se necessário
 docker compose exec app npm run migration:run -- -d src/data-source.ts
 ```
+
 API em: `http://localhost:3000`.
 
-
 ### Local (Node)
+
 ```bash
 npm install
 cp .env.example .env
 npm run dev   # ou: npm run build && npm start
 ```
 
-
 ## 🔧 Variáveis de Ambiente
+
 Exemplo detectado de `.env.example`:
+
 ```env
 # ========================
 # Application
@@ -67,24 +70,25 @@ SUPABASE_BUCKET_UPLOADS=uploads
 ```
 
 ## 🧱 Arquitetura
+
 - **Routes**: `src/routes/*` mapeiam endpoints por recurso (`/users`, `/login`, `/profile`, `/documents`, `/templates`).
 - **Middlewares**: autenticação (`verifyToken`), autorização (`verifyAdimn`, `verifyPermissions`), validação (`validateBody` com Zod), integridade (`verifyId`, `verifyUserExists`, `verifyOwnerDocument`).
 - **Controllers**: orquestram requisições e chamadas de service.
 - **Services**: regras de negócio, chamadas a repositórios e storage.
-- **Repositories/Entities**: TypeORM com entidades `User` e `Document` (relacionamentos e *hooks* para *hash* de senha).
+- **Repositories/Entities**: TypeORM com entidades `User` e `Document` (relacionamentos e _hooks_ para _hash_ de senha).
 - **Schemas**: validações com Zod (`user.schema.ts`, `document.schema.ts`, `login.schema.ts`, `template.schema.ts`).
 - **Storage**: `StorageService` integrado ao Supabase (upload/download, metadados).
 
-
 ## 📚 Fluxos de trabalho
+
 1. **Autenticação**: `POST /login` → token JWT com `sub` e `admin`.
 2. **Perfil**: `GET /profile` (token) retorna usuário e documentos.
-3. **Usuários**: CRUD; listagem restrita a admin; *self-service* para `GET/PATCH/DELETE /users/:id`.
+3. **Usuários**: CRUD; listagem restrita a admin; _self-service_ para `GET/PATCH/DELETE /users/:id`.
 4. **Documentos**: CRUD do usuário + **upload de anexo** (`POST /documents/:id/attachment`) enviando para o bucket.
 5. **Templates**: download público (`GET /templates/:id/download`) e CRUD **apenas para admin**.
 
-
 ## 🗂️ Estrutura de Diretórios
+
 ```text
 doc_express_BackEnd/
 ├── .env
@@ -240,8 +244,8 @@ doc_express_BackEnd/
 ├── tsconfig.json
 ```
 
-
 ## 📦 Scripts NPM
+
 ```json
 {
   "dev": "tsnd --cls --rs --ignore-watch node_modules src/server.ts",
@@ -254,68 +258,72 @@ doc_express_BackEnd/
   "schema:sync": "npm run typeorm -- schema:sync -d src/data-source.ts",
   "start": "npm run build && sleep 25 && npm run migration:run && node dist/server.js",
   "build": "tsc",
-  "test": "jest --runInBand"
+  "test": "jest --runInBand",
+  "seed": "ts-node src/seeds/adminSeed.ts"
 }
 ```
 
-
 ## 📑 Dependências
+
 ### Prod
-| Package | Version |
-|---|---|
+
+| Package                 | Version   |
+| ----------------------- | --------- |
 | `@supabase/supabase-js` | `^2.57.4` |
-| `bcryptjs` | `^3.0.2` |
-| `cors` | `^2.8.5` |
-| `dotenv` | `^16.4.7` |
-| `express` | `^4.21.2` |
-| `express-async-errors` | `^3.1.1` |
-| `jsonwebtoken` | `^9.0.2` |
-| `multer` | `^2.0.2` |
-| `pg` | `^8.14.1` |
-| `reflect-metadata` | `^0.2.2` |
-| `typeorm` | `^0.3.21` |
-| `zod` | `^3.24.2` |
+| `bcryptjs`              | `^3.0.2`  |
+| `cors`                  | `^2.8.5`  |
+| `dotenv`                | `^16.4.7` |
+| `express`               | `^4.21.2` |
+| `express-async-errors`  | `^3.1.1`  |
+| `jsonwebtoken`          | `^9.0.2`  |
+| `multer`                | `^2.0.2`  |
+| `pg`                    | `^8.14.1` |
+| `reflect-metadata`      | `^0.2.2`  |
+| `typeorm`               | `^0.3.21` |
+| `zod`                   | `^3.24.2` |
 
 ### Dev
-| Package | Version |
-|---|---|
-| `@types/bcryptjs` | `^2.4.6` |
-| `@types/cors` | `^2.8.17` |
-| `@types/express` | `^5.0.1` |
-| `@types/jest` | `^30.0.0` |
-| `@types/jsonwebtoken` | `^9.0.9` |
-| `@types/multer` | `^2.0.0` |
-| `@types/supertest` | `^6.0.3` |
-| `jest` | `^30.2.0` |
-| `sqlite3` | `^5.1.7` |
-| `supertest` | `^7.1.4` |
-| `ts-jest` | `^29.4.4` |
-| `ts-node-dev` | `^2.0.0` |
-| `typescript` | `^5.8.2` |
 
+| Package               | Version   |
+| --------------------- | --------- |
+| `@types/bcryptjs`     | `^2.4.6`  |
+| `@types/cors`         | `^2.8.17` |
+| `@types/express`      | `^5.0.1`  |
+| `@types/jest`         | `^30.0.0` |
+| `@types/jsonwebtoken` | `^9.0.9`  |
+| `@types/multer`       | `^2.0.0`  |
+| `@types/supertest`    | `^6.0.3`  |
+| `jest`                | `^30.2.0` |
+| `sqlite3`             | `^5.1.7`  |
+| `supertest`           | `^7.1.4`  |
+| `ts-jest`             | `^29.4.4` |
+| `ts-node-dev`         | `^2.0.0`  |
+| `typescript`          | `^5.8.2`  |
 
 ## 🧪 Testes
+
 Se houver testes configurados:
+
 ```bash
 docker compose exec app npm test
 # ou localmente
 npm test
 ```
 
-
 ## 🗃️ Migrações
+
 ```bash
 npm run migration:generate -- src/migrations/<name>
 npm run migration:run -- -d src/data-source.ts
 npm run migration:revert -- -d src/data-source.ts
 ```
 
-
 ## 📄 Documentação da API
+
 Consulte [docs/api_endpoints.md](./doc_express_BackEnd/docs/api_endpoints.md) para exemplos completos por endpoint (inclui cURL e cenários de erro).
 
-
 ## 🐞 Troubleshooting rápido
+
 - `ECONNREFUSED` em migrations: verifique serviço do DB e `DATABASE_URL`.
 - Falhas em upload: checar permissões do bucket e variáveis `SUPABASE_*`.
 - `401/403`: confirmar envio do header `Authorization: Bearer <token>` e privilégios.

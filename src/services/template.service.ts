@@ -8,29 +8,47 @@ import {
 import { ILike } from "typeorm";
 import { AppError } from "../errors/AppError.error";
 import StorageService from "../services/storage.service";
+import fs from "fs";
+import path from "path";
 
 export class TemplateService {
   private storageService: StorageService;
   private templateRepository = AppDataSource.getRepository(Template);
+  private useSupabase: boolean;
 
   constructor() {
     this.storageService = new StorageService();
+    this.useSupabase = !!process.env.SUPABASE_URL && !!process.env.SUPABASE_KEY;
   }
 
-  // Criar template com upload para o bucket
   async createWithUpload(uploadData: ITemplateUploadData): Promise<Template> {
-    const bucketName = process.env.SUPABASE_BUCKET_TEMPLATES || "templates";
-
     try {
-      // 1. Upload do arquivo para o bucket
-      const fileUrl = await this.storageService.uploadFileBuffer(
-        bucketName,
-        uploadData.fileBuffer,
-        uploadData.fileName,
-        uploadData.mimeType
-      );
+      let fileUrl: string;
 
-      // 2. Cria o registro do template no banco
+      if (this.useSupabase) {
+        // --- Upload via Supabase ---
+        const bucketName = process.env.SUPABASE_BUCKET_TEMPLATES || "templates";
+        fileUrl = await this.storageService.uploadFileBuffer(
+          bucketName,
+          uploadData.fileBuffer,
+          uploadData.fileName,
+          uploadData.mimeType
+        );
+      } else {
+        // --- Upload local (sem Supabase) ---
+        const uploadDir = path.resolve("uploads/templates");
+        if (!fs.existsSync(uploadDir)) {
+          fs.mkdirSync(uploadDir, { recursive: true });
+        }
+
+        const localPath = path.join(uploadDir, uploadData.fileName);
+        fs.writeFileSync(localPath, uploadData.fileBuffer);
+
+        // Caminho acessível (ex: se o Express servir /uploads)
+        fileUrl = `/uploads/templates/${uploadData.fileName}`;
+      }
+
+      // Criação do registro no banco
       const templateData: TTemplateCreate = {
         name: uploadData.name,
         description: uploadData.description,
@@ -47,11 +65,8 @@ export class TemplateService {
 
       return await this.templateRepository.save(template);
     } catch (error) {
-      const errorMessage =
-        typeof error === "object" && error !== null && "message" in error
-          ? (error as { message?: string }).message
-          : String(error);
-      throw new AppError(`Failed to upload template: ${errorMessage}`, 500);
+      const message = error instanceof Error ? error.message : String(error);
+      throw new AppError(`Failed to upload template: ${message}`, 500);
     }
   }
 
@@ -89,14 +104,24 @@ export class TemplateService {
     const template = await this.readOne(id);
     if (!template) throw new AppError("Template not found", 404);
 
-    // Remove arquivo do bucket antes de desativar
+    // Remoção do arquivo (Supabase ou local)
     if (template.fileUrl) {
       try {
-        const bucketName = process.env.SUPABASE_BUCKET_TEMPLATES || "templates";
-        await this.storageService.deleteFile(bucketName, template.fileName);
+        if (this.useSupabase) {
+          const bucketName =
+            process.env.SUPABASE_BUCKET_TEMPLATES || "templates";
+          await this.storageService.deleteFile(bucketName, template.fileName);
+        } else {
+          const localPath = path.resolve(
+            "uploads/templates",
+            template.fileName
+          );
+          if (fs.existsSync(localPath)) {
+            fs.unlinkSync(localPath);
+          }
+        }
       } catch (error) {
-        console.error("Error deleting file from bucket:", error);
-        // Não lança erro para não impedir a exclusão do registro
+        console.error("Error deleting file:", error);
       }
     }
 
@@ -110,43 +135,38 @@ export class TemplateService {
     id: string
   ): Promise<{ buffer: Buffer; template: Template }> {
     const template = await this.readOne(id);
-    if (!template) {
-      throw new AppError("Template not found", 404);
-    }
+    if (!template) throw new AppError("Template not found", 404);
 
-    if (!template.fileUrl) {
-      throw new AppError("File not available", 404);
-    }
+    if (!template.fileUrl) throw new AppError("File not available", 404);
 
     try {
-      const bucketName = process.env.SUPABASE_BUCKET_TEMPLATES || "templates";
+      let buffer: Buffer;
 
-      // Extrai nome do arquivo da URL do Supabase
-      const fileNameFromUrl = this.extractFileNameFromUrl(template.fileUrl);
-      const fileName = fileNameFromUrl || template.fileName;
+      if (this.useSupabase) {
+        const bucketName = process.env.SUPABASE_BUCKET_TEMPLATES || "templates";
+        const fileNameFromUrl = this.extractFileNameFromUrl(template.fileUrl);
+        const fileName = fileNameFromUrl || template.fileName;
 
-      console.log("🔍 Download debug:", {
-        fileUrl: template.fileUrl,
-        fileNameInDb: template.fileName,
-        fileNameInSupabase: fileNameFromUrl,
-        usingFileName: fileName,
-      });
+        buffer = await this.storageService.downloadFile(bucketName, fileName);
+      } else {
+        const localPath = path.resolve("uploads/templates", template.fileName);
+        if (!fs.existsSync(localPath)) {
+          throw new AppError("Local file not found", 404);
+        }
+        buffer = fs.readFileSync(localPath);
+      }
 
-      const buffer = await this.storageService.downloadFile(bucketName, fileName);
       return { buffer, template };
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
-      throw new AppError(`Failed to download file: ${errorMessage}`, 500);
+      const message = error instanceof Error ? error.message : String(error);
+      throw new AppError(`Failed to download file: ${message}`, 500);
     }
   }
 
-  // Método auxiliar para extrair nome do arquivo da URL
   private extractFileNameFromUrl(fileUrl: string): string | null {
     try {
-      const url = new URL(fileUrl);
-      const pathParts = url.pathname.split("/");
-      return pathParts[pathParts.length - 1];
+      const decodedPath = decodeURIComponent(new URL(fileUrl).pathname);
+      return decodedPath.split("/").pop() || null;
     } catch {
       return null;
     }
