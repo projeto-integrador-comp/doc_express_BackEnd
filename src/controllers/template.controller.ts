@@ -2,61 +2,20 @@ import { Request, Response } from "express";
 import { TemplateService } from "../services/template.service";
 import {
   TAllowedMimeTypes,
-  TTemplateCreate,
-  TTemplateUpdate,
   ITemplateUploadData,
 } from "../interfaces/template.interface";
 import { AppError } from "../errors/AppError.error";
-import fs from "fs";
-import path from "path";
 import z from "zod";
 import { templateUploadSchema } from "../schemas/template.schema";
+import { AppDataSource } from "../data-source";
+import { Template } from "../entities/template.entity";
+import path from "path";
+import fs from "fs";
 
 export class TemplateController {
   constructor(private templateService: TemplateService) {}
 
   async create(req: Request, res: Response) {
-    // try {
-    //   if (!req.file) {
-    //     throw new AppError("Nenhum arquivo enviado", 400);
-    //   }
-
-    //   // Crie um objeto completo para validação Zod
-    //   const completeBody = {
-    //     ...req.body,
-    //     fileName: req.file.originalname,
-    //     fileSize: req.file.size,
-    //     mimeType: req.file.mimetype,
-    //   };
-
-    //   // Valide o objeto COMPLETO com Zod
-    //   const validatedData = templateUploadSchema.parse(completeBody);
-
-    //   // Agora crie os dados do template
-    //   const templateData: TTemplateCreate = {
-    //     name: validatedData.name,
-    //     description: validatedData.description,
-    //     fileName: req.file.originalname,
-    //     filePath: req.file.path,
-    //     fileSize: req.file.size,
-    //     mimeType: req.file.mimetype as TAllowedMimeTypes,
-    //     isActive: true,
-    //   };
-
-    //   const newTemplate = await this.templateService.create(templateData);
-    //   return res.status(201).json(newTemplate);
-    // } catch (error) {
-    //   if (error instanceof AppError) {
-    //     return res.status(error.statusCode).json({ error: error.message });
-    //   }
-
-    //   // Capture erros de validação do Zod
-    //   if (error instanceof z.ZodError) {
-    //     return res.status(400).json({ error: error.errors });
-    //   }
-
-    //   return res.status(400).json({ error: "Error creating template" });
-    // }
     try {
       if (!req.file) {
         throw new AppError("Nenhum arquivo enviado", 400);
@@ -65,21 +24,55 @@ export class TemplateController {
       // Validação dos dados do formulário
       const validatedData = templateUploadSchema.parse(req.body);
 
-      // Prepara os dados para upload
+      const hasSupabase =
+        process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY;
+
+      if (!hasSupabase) {
+        // ==============================
+        // 🔹 SALVA LOCALMENTE (sem Supabase)
+        // ==============================
+        console.warn("⚠️ Supabase não configurado. Salvando localmente...");
+
+        const uploadDir = path.resolve(__dirname, "../../uploads");
+        if (!fs.existsSync(uploadDir)) {
+          fs.mkdirSync(uploadDir, { recursive: true });
+        }
+
+        const filePath = path.join(uploadDir, req.file.originalname);
+        fs.writeFileSync(filePath, req.file.buffer);
+
+        const templateRepo = AppDataSource.getRepository(Template);
+        const template = templateRepo.create({
+          name: validatedData.name,
+          description: validatedData.description,
+          fileName: req.file.originalname,
+          fileSize: req.file.size,
+          mimeType: req.file.mimetype as TAllowedMimeTypes,
+          fileUrl: `/uploads/${req.file.originalname}`,
+          isActive: true,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        });
+
+        await templateRepo.save(template);
+        return res.status(201).json(template);
+      }
+
+      // ==============================
+      // 🔹 SALVA NO SUPABASE (configurado)
+      // ==============================
       const uploadData: ITemplateUploadData = {
         name: validatedData.name,
         description: validatedData.description,
         fileName: req.file.originalname,
         fileSize: req.file.size,
         mimeType: req.file.mimetype as TAllowedMimeTypes,
-        fileBuffer: req.file.buffer, // Agora usamos o buffer em memória
+        fileBuffer: req.file.buffer,
       };
 
-      // Usa o novo método que faz upload para o bucket
       const newTemplate = await this.templateService.createWithUpload(
         uploadData
       );
-
       return res.status(201).json(newTemplate);
     } catch (error) {
       if (error instanceof AppError) {
@@ -90,7 +83,8 @@ export class TemplateController {
         return res.status(400).json({ error: error.errors });
       }
 
-      return res.status(500).json({ error: "Error creating template" });
+      console.error("Erro ao criar template:", error);
+      return res.status(500).json({ error: "Erro interno ao criar template" });
     }
   }
 
@@ -99,9 +93,9 @@ export class TemplateController {
       const templates = await this.templateService.read();
       return res.json(templates);
     } catch (error) {
-      if (error instanceof AppError) {
+      if (error instanceof AppError)
         return res.status(error.statusCode).json({ error: error.message });
-      }
+
       return res.status(500).json({ error: "Internal server error" });
     }
   }
@@ -117,9 +111,9 @@ export class TemplateController {
 
       return res.json(template);
     } catch (error) {
-      if (error instanceof AppError) {
+      if (error instanceof AppError)
         return res.status(error.statusCode).json({ error: error.message });
-      }
+
       return res.status(500).json({ error: "Internal server error" });
     }
   }
@@ -130,9 +124,9 @@ export class TemplateController {
       const template = await this.templateService.update(id, req.body);
       return res.json(template);
     } catch (error) {
-      if (error instanceof AppError) {
+      if (error instanceof AppError)
         return res.status(error.statusCode).json({ error: error.message });
-      }
+
       return res.status(400).json({ error: "Error updating template" });
     }
   }
@@ -143,22 +137,18 @@ export class TemplateController {
       await this.templateService.remove(id);
       return res.status(204).json();
     } catch (error) {
-      if (error instanceof AppError) {
+      if (error instanceof AppError)
         return res.status(error.statusCode).json({ error: error.message });
-      }
+
       return res.status(500).json({ error: "Internal server error" });
     }
   }
 
   async download(req: Request, res: Response) {
-    //
     try {
       const { id } = req.params;
-
-      // Obtém o arquivo do bucket
       const { buffer, template } = await this.templateService.downloadFile(id);
 
-      // Configura headers para download
       res.setHeader("Content-Type", template.mimeType);
       res.setHeader(
         "Content-Disposition",
@@ -166,12 +156,11 @@ export class TemplateController {
       );
       res.setHeader("Content-Length", buffer.length.toString());
 
-      // Envia o buffer diretamente
       return res.send(buffer);
     } catch (error) {
-      if (error instanceof AppError) {
+      if (error instanceof AppError)
         return res.status(error.statusCode).json({ error: error.message });
-      }
+
       return res.status(500).json({ error: "Internal server error" });
     }
   }
@@ -191,9 +180,9 @@ export class TemplateController {
 
       return res.json(templates);
     } catch (error) {
-      if (error instanceof AppError) {
+      if (error instanceof AppError)
         return res.status(error.statusCode).json({ error: error.message });
-      }
+
       return res.status(500).json({ error: "Internal server error" });
     }
   }
