@@ -17,26 +17,73 @@ A documentação é **agnóstica ao provedor** de storage. As variáveis de ambi
 - Banco PostgreSQL acessível
 - Credenciais do provedor de storage (ex.: Supabase)
 
-## 🚀 Executando o projeto
+---
 
-### Via Docker (recomendado)
+## ⚙️ Configuração do Ambiente
+
+### 1. Clonar o repositório
 
 ```bash
-cp .env.example .env
-# edite as variáveis
-docker compose up -d --build
-# aplicar migrations se necessário
-docker compose exec app npm run migration:run -- -d src/data-source.ts
+git clone https://github.com/projeto-integrador-comp/doc_express_BackEnd.git
+cd doc_express_BackEnd
 ```
 
-API em: `http://localhost:3000`.
-
-### Local (Node)
+### 2. Instalar dependências
 
 ```bash
 npm install
+```
+
+### 3. Configurar variáveis de ambiente
+
+O arquivo `.env.example` está disponível na raiz do projeto.  
+Crie seu arquivo `.env` com base nele:
+
+```bash
 cp .env.example .env
-npm run dev   # ou: npm run build && npm start
+```
+
+> 🔹 **Importante:** configure corretamente as credenciais do banco de dados e do Supabase antes de iniciar o servidor caso não vá executar localmente.
+
+---
+
+## 🐳 Execução com Docker
+
+Para rodar o projeto completo (backend + banco de dados + seed automático do admin):
+
+```bash
+docker compose up -d --build
+```
+
+Ao rodar com Docker Compose, será automaticamente criado um **usuário administrador** no banco, com as credenciais:
+
+```
+email: admin@docexpress.com
+senha: admin123
+```
+
+Esse seed é executado apenas quando o ambiente é inicializado localmente ou via Docker, garantindo que haja um usuário admin padrão para testes.
+
+---
+
+## 🧠 Execução Manual (sem Docker)
+
+### 1. Rodar as migrações do TypeORM
+
+```bash
+npm run migration:run
+```
+
+### 2. Rodar o seed manualmente (para criar o admin)
+
+```bash
+npm run seed
+```
+
+### 3. Iniciar o servidor
+
+```bash
+npm run dev
 ```
 
 ## 🔧 Variáveis de Ambiente
@@ -44,6 +91,11 @@ npm run dev   # ou: npm run build && npm start
 Exemplo detectado de `.env.example`:
 
 ```env
+# ========================
+# Environment
+# ========================
+NODE_ENV=development
+
 # ========================
 # Application
 # ========================
@@ -61,13 +113,30 @@ DATABASE_URL="postgres://myuser:mypass@db:5432/docexpress"
 SECRET_KEY="your_jwt_secret_here"
 
 # ========================
-# Supabase (Storage)
+# Supabase (Storage) --> Abilite somente se tiver acesso ao supabase e adicione as chaves necessárias
 # ========================
-SUPABASE_URL=https://your-project-id.supabase.co
-SUPABASE_KEY=your-service-role-key
-SUPABASE_BUCKET_TEMPLATES=templates
-SUPABASE_BUCKET_UPLOADS=uploads
+# SUPABASE_URL=https://your-project-id.supabase.co
+# SUPABASE_KEY=your-service-role-key
+# SUPABASE_BUCKET_TEMPLATES=templates
+# SUPABASE_BUCKET_UPLOADS=uploads
 ```
+
+---
+
+## 🗄️ Uploads Locais
+
+Quando a aplicação é executada **em localhost** (sem Supabase configurado),  
+os documentos enviados via upload são armazenados automaticamente na pasta:
+
+```
+uploads/templates
+```
+
+> A pasta é criada automaticamente caso não exista.
+
+Em produção, os arquivos são armazenados no **Supabase Storage**, conforme configuração no `.env`.
+
+---
 
 ## 🧱 Arquitetura
 
@@ -327,3 +396,27 @@ Consulte [docs/api_endpoints.md](./doc_express_BackEnd/docs/api_endpoints.md) pa
 - `ECONNREFUSED` em migrations: verifique serviço do DB e `DATABASE_URL`.
 - Falhas em upload: checar permissões do bucket e variáveis `SUPABASE_*`.
 - `401/403`: confirmar envio do header `Authorization: Bearer <token>` e privilégios.
+
+---
+
+## 🤝 Colaboradores
+
+Este projeto foi desenvolvido como parte do **Projeto Integrador - UNIVESP**.
+
+<div align="center">
+
+### 👥 Nossa Equipe
+
+<a href="https://github.com/julianohbl"><img src="https://github.com/julianohbl.png?size=100" width="100" height="100"></a>
+<a href="https://github.com/Miguel-Lucio"><img src="https://github.com/Miguel-Lucio.png?size=100" width="100" height="100"></a>
+<a href="https://github.com/felipecsr"><img src="https://github.com/felipecsr.png?size=100" width="100" height="100"></a>
+<a href="https://github.com/Nu-li"><img src="https://github.com/Nu-li.png?size=100" width="100" height="100"></a>
+
+<br>
+
+<a href="https://github.com/Henrique-Kriguer"><img src="https://github.com/Henrique-Kriguer.png?size=100" width="100" height="100"></a>
+<a href="https://github.com/rubenslaurindo"><img src="https://github.com/rubenslaurindo.png?size=100" width="100" height="100"></a>
+<a href="https://github.com/abiratanl"><img src="https://github.com/abiratanl.png?size=100" width="100" height="100"></a>
+<a href="https://github.com/23200967"><img src="https://github.com/23200967.png?size=100" width="100" height="100"></a>
+
+</div>
