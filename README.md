@@ -6,6 +6,30 @@ DocExpress é a **API backend** do projeto de gestão documental, construída em
 
 ---
 
+## 🌐 Links do Projeto
+
+- **Frontend (Vercel):** [https://pi-creche.vercel.app/](https://pi-creche.vercel.app/)
+- **Backend (Render):** [https://doc-express-backend.onrender.com/](https://doc-express-backend.onrender.com/)
+- **Repositório Frontend:** [https://github.com/projeto-integrador-comp/doc_express_FrontEnd](https://github.com/projeto-integrador-comp/doc_express_FrontEnd)
+- **Repositório Backend:** [https://github.com/projeto-integrador-comp/doc_express_BackEnd](https://github.com/projeto-integrador-comp/doc_express_BackEnd)
+
+---
+
+## ⚙️ Tecnologias Utilizadas
+
+- **Node.js**
+- **Express.js**
+- **Prisma ORM**
+- **PostgreSQL**
+- **Supabase (armazenamento em produção)**
+- **Docker & Docker Compose**
+- **JWT (autenticação)**
+- **Bcrypt (hash de senhas)**
+- **Multer (upload de arquivos)**
+- **Cors / Dotenv / Nodemon**
+
+---
+
 ## ✨ Observação sobre Storage
 
 A documentação é **agnóstica ao provedor** de storage. As variáveis de ambiente seguem o prefixo `STORAGE_*` ou `SUPABASE_*`, permitindo migrar de plataforma sem alterar fluxos de código. No projeto atual, **Supabase Storage** está configurado como provedor de arquivos para _templates_ e _uploads_.
