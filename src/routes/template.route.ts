@@ -73,7 +73,7 @@ templateRouter.post(
 );
 
 // READ - Listar todos templates
-templateRouter.get("/", (req, res) => {
+templateRouter.get("/", verifyToken, validateToken, (req, res) => {
   templateController.read(req, res);
 });
 
