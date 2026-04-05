@@ -9,7 +9,7 @@ import {
 } from "../schemas/template.schema";
 import { verifyToken } from "../middlewares/verifyToken.middleware";
 import { validateToken } from "../middlewares/validatetoken.middleware";
-import { verifyAdimn } from "../middlewares/verifyAdimin.middleware";
+import { verifyAdmin } from "../middlewares/verifyAdmin.middleware";
 import { upload } from "../config/multer.config";
 import { AppDataSource } from "../data-source";
 import { Template } from "../entities/template.entity";
@@ -69,7 +69,7 @@ templateRouter.post(
       console.error("Erro ao salvar template:", err);
       res.status(500).json({ message: "Erro ao salvar template" });
     }
-  }
+  },
 );
 
 // READ - Listar todos templates
@@ -89,7 +89,7 @@ templateRouter.get("/:id", (req, res) => {
 
 // ===================== PROTECTED ROUTES =====================
 
-templateRouter.use(verifyToken, validateToken, verifyAdimn);
+templateRouter.use(verifyToken, validateToken, verifyAdmin);
 
 // UPDATE
 templateRouter.patch("/:id", validateBody(templateUpdateSchema), (req, res) => {

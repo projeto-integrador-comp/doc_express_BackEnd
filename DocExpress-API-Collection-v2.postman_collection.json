@@ -1,0 +1,535 @@
+{
+  "info": {
+    "_postman_id": "docexpress-api-collection-v2",
+    "name": "DocExpress Creche API - CRUD Completo",
+    "description": "API completa para gerenciamento de creche - turmas, alunos e presença",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "🔐 Auth",
+      "item": [
+        {
+          "name": "1. Login (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@docexpress.com\",\n  \"password\": \"admin123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/login",
+              "host": ["{{base_url}}"],
+              "path": ["login"]
+            },
+            "description": "✅ Faça login e copie o token para a variável 'token'"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "👥 Users (Admin Only)",
+      "item": [
+        {
+          "name": "1. Create Teacher",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Maria Silva\",\n  \"email\": \"maria.silva@escola.com\",\n  \"password\": \"senha123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/users/create-teacher",
+              "host": ["{{base_url}}"],
+              "path": ["users", "create-teacher"]
+            },
+            "description": "✅ Cria um novo professor. Copie o ID retornado para a variável 'teacher_id'"
+          },
+          "response": []
+        },
+        {
+          "name": "2. Create Monitor",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"João Santos\",\n  \"email\": \"joao.santos@escola.com\",\n  \"password\": \"senha123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/users/create-monitor",
+              "host": ["{{base_url}}"],
+              "path": ["users", "create-monitor"]
+            },
+            "description": "✅ Cria um novo monitor. Copie o ID retornado para a variável 'monitor_id'"
+          },
+          "response": []
+        },
+        {
+          "name": "3. List All Users",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/users",
+              "host": ["{{base_url}}"],
+              "path": ["users"]
+            },
+            "description": "Lista todos os usuários (admin, professores, monitores)"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "🏫 Classrooms (Turmas) - CRUD",
+      "item": [
+        {
+          "name": "1. Create Classroom",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Turma A - Maternal\",\n  \"teacherId\": \"{{teacher_id}}\",\n  \"monitorIds\": [\"{{monitor_id}}\"]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/classrooms",
+              "host": ["{{base_url}}"],
+              "path": ["classrooms"]
+            },
+            "description": "✅ Cria uma nova turma com professor e monitores. Copie o ID da resposta para 'classroom_id'"
+          },
+          "response": []
+        },
+        {
+          "name": "2. List All Classrooms",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/classrooms",
+              "host": ["{{base_url}}"],
+              "path": ["classrooms"]
+            },
+            "description": "Lista todas as turmas com seus professores, monitores e alunos"
+          },
+          "response": []
+        },
+        {
+          "name": "3. Get Classroom by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/classrooms/{{classroom_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["classrooms", "{{classroom_id}}"]
+            },
+            "description": "Obtém detalhes de uma turma específica"
+          },
+          "response": []
+        },
+        {
+          "name": "4. Update Classroom",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Turma A - Maternal (Atualizada)\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/classrooms/{{classroom_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["classrooms", "{{classroom_id}}"]
+            },
+            "description": "Atualiza informações da turma"
+          },
+          "response": []
+        },
+        {
+          "name": "5. Delete Classroom",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/classrooms/{{classroom_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["classrooms", "{{classroom_id}}"]
+            },
+            "description": "Deleta uma turma (apenas admin)"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "👨‍🎓 Students (Alunos) - CRUD",
+      "item": [
+        {
+          "name": "1. Create Student",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"João Silva\",\n  \"classroomId\": \"{{classroom_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/students",
+              "host": ["{{base_url}}"],
+              "path": ["students"]
+            },
+            "description": "✅ Cria um novo aluno em uma turma. Copie o ID retornado para 'student_id'"
+          },
+          "response": []
+        },
+        {
+          "name": "2. List All Students",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/students",
+              "host": ["{{base_url}}"],
+              "path": ["students"]
+            },
+            "description": "Lista todos os alunos de todas as turmas"
+          },
+          "response": []
+        },
+        {
+          "name": "3. List Students by Classroom",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/students/classroom/{{classroom_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["students", "classroom", "{{classroom_id}}"]
+            },
+            "description": "Lista todos os alunos de uma turma específica"
+          },
+          "response": []
+        },
+        {
+          "name": "4. Get Student by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/students/{{student_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["students", "{{student_id}}"]
+            },
+            "description": "Obtém detalhes de um aluno específico"
+          },
+          "response": []
+        },
+        {
+          "name": "5. Update Student",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"João Paulo Silva\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/students/{{student_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["students", "{{student_id}}"]
+            },
+            "description": "Atualiza informações do aluno"
+          },
+          "response": []
+        },
+        {
+          "name": "6. Delete Student",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/students/{{student_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["students", "{{student_id}}"]
+            },
+            "description": "Deleta um aluno"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "📋 Attendance (Presença) - CRUD",
+      "item": [
+        {
+          "name": "1. Check-In (Entrada)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"studentId\": \"{{student_id}}\",\n  \"date\": \"2026-04-05\",\n  \"observation\": \"Chegou 15 minutos atrasado\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/attendance/check-in",
+              "host": ["{{base_url}}"],
+              "path": ["attendance", "check-in"]
+            },
+            "description": "✅ Registra o horário de entrada (check-in) de um aluno. Formato: YYYY-MM-DD. Campo observation é opcional - pode registrar atrasos, observações especiais, etc."
+          },
+          "response": []
+        },
+        {
+          "name": "2. Check-Out (Saída)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"studentId\": \"{{student_id}}\",\n  \"date\": \"2026-04-05\",\n  \"observation\": \"Saída antecipada - aluno se machucou / Dor / Febre - responsável acionado\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/attendance/check-out",
+              "host": ["{{base_url}}"],
+              "path": ["attendance", "check-out"]
+            },
+            "description": "✅ Registra o horário de saída (check-out) de um aluno. Campo observation é opcional - registre motivos como: saída antecipada, machucado, dor, febre, ausência sem aviso prévio, etc."
+          },
+          "response": []
+        },
+        {
+          "name": "3. Get All Attendance by Student",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/attendance/student/{{student_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["attendance", "student", "{{student_id}}"]
+            },
+            "description": "Lista histórico completo de presença de um aluno"
+          },
+          "response": []
+        },
+        {
+          "name": "4. Get Attendance by Classroom (Daily Record)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/attendance/classroom/{{classroom_id}}?date=2026-04-05",
+              "host": ["{{base_url}}"],
+              "path": ["attendance", "classroom", "{{classroom_id}}"],
+              "query": [
+                {
+                  "key": "date",
+                  "value": "2026-04-05",
+                  "description": "Data no formato YYYY-MM-DD"
+                }
+              ]
+            },
+            "description": "✅ Obtém a chamada/presença de TODOS os alunos de uma turma em um dia específico. Perfeito para visualizar a chamada do dia!"
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string",
+      "description": "JWT token obtido após fazer login. Cole aqui após fazer login."
+    },
+    {
+      "key": "classroom_id",
+      "value": "",
+      "type": "string",
+      "description": "ID da turma criada"
+    },
+    {
+      "key": "student_id",
+      "value": "",
+      "type": "string",
+      "description": "ID do aluno criado"
+    },
+    {
+      "key": "teacher_id",
+      "value": "",
+      "type": "string",
+      "description": "ID do professor criado"
+    },
+    {
+      "key": "monitor_id",
+      "value": "",
+      "type": "string",
+      "description": "ID do monitor criado"
+    }
+  ]
+}
