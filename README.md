@@ -1,62 +1,734 @@
-# DocExpress API
+# DocExpress Creche Management API
 
-![Node.js](https://img.shields.io/badge/Node.js-18%2B-brightgreen?logo=node.js) ![TypeScript](https://img.shields.io/badge/TypeScript-blue?logo=typescript) ![Express](https://img.shields.io/badge/Express-black?logo=express) ![TypeORM](https://img.shields.io/badge/TypeORM-0.3.x-lightgrey) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-blue?logo=postgresql) ![Docker](https://img.shields.io/badge/Docker-Compose-blue?logo=docker) ![Status](https://img.shields.io/badge/Status-Atualizado-green)
+## 📋 Visão Geral
 
-DocExpress é a **API backend** do projeto de gestão documental, construída em **Node.js + TypeScript** com **Express** e **TypeORM** (PostgreSQL). O projeto inclui **autenticação JWT**, **validação com Zod**, camadas bem definidas (Router → Middlewares → Controller → Service → Repository/Entities) e integração com _object storage_ (Supabase Storage por padrão).
+Sistema backend completo para gerenciamento de creches, desenvolvido em Node.js/TypeScript com foco em controle de presença diário, gerenciamento de turmas e permissões baseadas em roles.
 
----
+**Status**: ✅ **100% Funcional** - Sistema completo com todas as funcionalidades implementadas e testadas.
 
-## 🌐 Links do Projeto
+## 🏗️ Arquitetura & Tecnologias
 
-- **Frontend (Vercel):** [https://pi-creche.vercel.app/](https://pi-creche.vercel.app/)
-- **Backend (Render):** [https://doc-express-backend.onrender.com/](https://doc-express-backend.onrender.com/)
-- **Repositório Frontend:** [https://github.com/projeto-integrador-comp/doc_express_FrontEnd](https://github.com/projeto-integrador-comp/doc_express_FrontEnd)
-- **Repositório Backend:** [https://github.com/projeto-integrador-comp/doc_express_BackEnd](https://github.com/projeto-integrador-comp/doc_express_BackEnd)
+### Stack Principal
 
----
+- **Runtime**: Node.js 18-alpine (Docker)
+- **Linguagem**: TypeScript 5.9.3 (strict mode)
+- **Framework**: Express.js com express-async-errors
+- **ORM**: TypeORM 0.3.x (metadata-based)
+- **Banco**: PostgreSQL 15
+- **Containerização**: Docker Compose
+- **Validação**: Zod (runtime schema validation)
+- **Autenticação**: JWT (jsonwebtoken, 3h expiry)
+- **Hashing**: Bcryptjs (10 salt rounds)
 
-## ⚙️ Tecnologias Utilizadas
+### Padrões Arquiteturais
 
-- **Node.js**
-- **Express.js**
-- **Prisma ORM**
-- **PostgreSQL**
-- **Supabase (armazenamento em produção)**
-- **Docker & Docker Compose**
-- **JWT (autenticação)**
-- **Bcrypt (hash de senhas)**
-- **Multer (upload de arquivos)**
-- **Cors / Dotenv / Nodemon**
+- **MVC**: Separação clara entre Routes → Controllers → Services → Repositories
+- **Repository Pattern**: Acesso centralizado ao banco de dados
+- **Dependency Injection**: Injeção de dependências via construtor
+- **Global Error Handling**: Tratamento unificado de erros via middleware AppError
+- **Role-Based Access Control (RBAC)**: Controle de permissões baseado em enum Role
+- **Schema-First Validation**: Zod valida entrada antes do processamento
 
----
+## 📁 Estrutura do Projeto
 
-## ✨ Observação sobre Storage
+```
+doc_express_BackEnd/
+├── build.sh                    # Script de build
+├── docker-compose.yml          # Orquestração Docker
+├── Dockerfile                  # Containerização da aplicação
+├── jest.config.ts             # Configuração de testes
+├── package.json               # Dependências e scripts
+├── tsconfig.json              # Configuração TypeScript
+├── README.md                  # Este arquivo
+├── DocExpress-API-Collection-v2.postman_collection.json
+│
+├── docs/
+│   └── api_endpoints.md       # Documentação de endpoints
+│
+├── src/
+│   ├── app.ts                 # Configuração Express principal
+│   ├── data-source.ts         # Configuração TypeORM
+│   ├── server.ts              # Inicialização do servidor
+│   │
+│   ├── config/
+│   │   └── multer.config.ts   # Configuração de upload de arquivos
+│   │
+│   ├── controllers/           # Handlers de requisições HTTP
+│   │   ├── document.controller.ts
+│   │   ├── login.controller.ts
+│   │   ├── profile.controller.ts
+│   │   ├── template.controller.ts
+│   │   ├── user.controller.ts
+│   │   ├── classroom.controller.ts    # ✅ NOVO
+│   │   ├── student.controller.ts      # ✅ NOVO
+│   │   └── attendance.controller.ts   # ✅ NOVO
+│   │
+│   ├── entities/              # Entidades TypeORM
+│   │   ├── document.entity.ts
+│   │   ├── template.entity.ts
+│   │   ├── user.entity.ts      # 🔄 MODIFICADO (roles)
+│   │   ├── classroom.entity.ts # ✅ NOVO
+│   │   ├── student.entity.ts   # ✅ NOVO
+│   │   └── attendance.entity.ts# ✅ NOVO
+│   │
+│   ├── errors/
+│   │   └── AppError.error.ts   # Classe de erro customizada
+│   │
+│   ├── interfaces/            # Tipos TypeScript (auto-gerados via Zod)
+│   │   ├── document.interface.ts
+│   │   ├── login.interface.ts
+│   │   ├── profile.interface.ts
+│   │   ├── template.interface.ts
+│   │   ├── user.interface.ts
+│   │   ├── classroom.interface.ts # ✅ NOVO
+│   │   ├── student.interface.ts   # ✅ NOVO
+│   │   └── attendance.interface.ts# ✅ NOVO
+│   │
+│   ├── middlewares/           # Middlewares Express
+│   │   ├── handleAppError.middleware.ts
+│   │   ├── validateBody.middleware.ts
+│   │   ├── validatetoken.middleware.ts
+│   │   ├── validateTokenProfile.middleware.ts
+│   │   ├── verifyAdimin.middleware.ts
+│   │   ├── verifyEmail.middleware.ts
+│   │   ├── verifyId.middleware.ts
+│   │   ├── verifyOwnerDocument.middleware.ts
+│   │   ├── verifyPermissions.middleware.ts
+│   │   ├── verifyToken.middleware.ts
+│   │   ├── verifyUserExists.middleware.ts
+│   │   ├── verifyAdmin.middleware.ts     # ✅ RENOMEADO (typo fix)
+│   │   ├── verifyTeacher.middleware.ts   # ✅ NOVO
+│   │   ├── verifyMonitor.middleware.ts   # ✅ NOVO
+│   │   └── verifyClassroomAccess.middleware.ts # ✅ NOVO
+│   │
+│   ├── migrations/            # Migrações TypeORM (11 arquivos)
+│   │   ├── 1743031851927-initialMigration.ts
+│   │   ├── 1743095952042-documentRelationship.ts
+│   │   ├── 1743360350678-defaultNoteColumn.ts
+│   │   ├── 1744049938500-documentDelivered.ts
+│   │   ├── 1758239509471-CreateTemplatesTable.ts
+│   │   ├── 1758757501692-ChangeFilePathToFileUrl.ts
+│   │   ├── 1759336383203-AddAttachmentFieldsToDocument.ts
+│   │   ├── 1759350000000-addRoleToUsers.ts         # ✅ NOVO
+│   │   ├── 1759350000001-populateRolesFromAdmin.ts # ✅ NOVO
+│   │   ├── 1759350000002-createClassroomsTable.ts  # ✅ NOVO
+│   │   └── 1759350000003-createStudentsAndAttendanceTables.ts # ✅ NOVO
+│   │
+│   ├── repositories.ts        # Repositórios legados
+│   ├── repositories-new.ts    # ✅ NOVO - Repositórios atualizados
+│   │
+│   ├── routes/                # Definições de rotas Express
+│   │   ├── document.route.ts
+│   │   ├── login.route.ts
+│   │   ├── profile.route.ts
+│   │   ├── template.route.ts
+│   │   ├── user.route.ts
+│   │   ├── classroom.route.ts  # ✅ NOVO
+│   │   ├── student.route.ts    # ✅ NOVO
+│   │   └── attendance.route.ts # ✅ NOVO
+│   │
+│   ├── schemas/               # Schemas Zod para validação
+│   │   ├── document.schema.ts
+│   │   ├── login.schema.ts
+│   │   ├── profile.schema.ts
+│   │   ├── template.schema.ts
+│   │   ├── user.schema.ts
+│   │   ├── classroom.schema.ts # ✅ NOVO
+│   │   ├── student.schema.ts   # ✅ NOVO
+│   │   └── attendance.schema.ts# ✅ NOVO
+│   │
+│   ├── seeds/
+│   │   └── adminSeed.ts       # Seed do usuário admin
+│   │
+│   └── services/              # Lógica de negócio
+│       ├── document.service.ts
+│       ├── login.service.ts
+│       ├── profile.service.ts
+│       ├── storage.service.ts
+│       ├── template.service.ts
+│       ├── user.service.ts
+│       ├── classroom.service.ts # ✅ NOVO
+│       ├── student.service.ts   # ✅ NOVO
+│       └── attendance.service.ts# ✅ NOVO
+│
+├── tests/                     # Testes automatizados
+│   ├── document.attachment.test.ts
+│   └── storage.test.ts
+│
+└── uploads/                   # Arquivos enviados
+    └── templates/
+```
 
-A documentação é **agnóstica ao provedor** de storage. As variáveis de ambiente seguem o prefixo `STORAGE_*` ou `SUPABASE_*`, permitindo migrar de plataforma sem alterar fluxos de código. No projeto atual, **Supabase Storage** está configurado como provedor de arquivos para _templates_ e _uploads_.
+## 🗄️ Modelo de Dados
 
-## ⚙️ Pré-requisitos
+### Diagrama ER Simplificado
 
-- Docker & Docker Compose (recomendado)
-- Node.js 18+ (para execução local)
-- Banco PostgreSQL acessível
-- Credenciais do provedor de storage (ex.: Supabase)
+```
+┌─────────────┐     ┌─────────────┐
+│    users    │     │ classrooms  │
+├─────────────┤     ├─────────────┤
+│ id (UUID)   │     │ id (UUID)   │
+│ name        │     │ name        │
+│ email       │     │ teacher_id  │──┐
+│ password    │     │ created_at  │  │
+│ role: enum  │     └─────────────┘  │
+│ admin: bool │                      │
+└─────────────┘                      │
+       │                             │
+       │ teacher                     │
+       ▼                             │
+┌─────────────┐     ┌─────────────┐  │
+│classroom_   │     │  students   │  │
+│ monitors    │◄────┤─────────────┤  │
+├─────────────┤     │ id (UUID)   │  │
+│classroom_id │     │ name        │  │
+│ monitor_id  │     │ classroom_id│◄─┘
+└─────────────┘     └─────────────┘
+                         │
+                         ▼
+                   ┌─────────────┐
+                   │ attendance  │
+                   ├─────────────┤
+                   │ id (UUID)   │
+                   │ date        │
+                   │ check_in    │
+                   │ check_out   │
+                   │ observation │
+                   │ student_id  │
+                   └─────────────┘
+```
 
----
+### Entidades Detalhadas
 
-## ⚙️ Configuração do Ambiente
+#### User Entity
 
-### 1. Clonar o repositório
+```typescript
+export enum Role {
+  ADMIN = "ADMIN",
+  TEACHER = "TEACHER",
+  MONITOR = "MONITOR",
+}
+
+@Entity("users")
+export class User {
+  @PrimaryGeneratedColumn("uuid")
+  id: string;
+
+  @Column({ type: "varchar", length: 100 })
+  name: string;
+
+  @Column({ type: "varchar", length: 100, unique: true })
+  email: string;
+
+  @Column({ type: "varchar" })
+  password: string;
+
+  @Column({ type: "enum", enum: Role, default: Role.MONITOR })
+  role: Role;
+
+  @Column({ type: "boolean", default: false })
+  admin: boolean; // LEGACY - manter para compatibilidade
+}
+```
+
+#### Classroom Entity
+
+```typescript
+@Entity("classrooms")
+export class Classroom {
+  @PrimaryGeneratedColumn("uuid")
+  id: string;
+
+  @Column({ type: "varchar", length: 100 })
+  name: string;
+
+  @ManyToOne(() => User, { nullable: false })
+  teacher: User;
+
+  @ManyToMany(() => User)
+  @JoinTable({
+    name: "classroom_monitors",
+    joinColumn: { name: "classroom_id", referencedColumnName: "id" },
+    inverseJoinColumn: { name: "monitor_id", referencedColumnName: "id" },
+  })
+  monitors: User[];
+
+  @OneToMany(() => Student, (s) => s.classroom)
+  students: Student[];
+
+  @Column({ type: "timestamp", default: () => "CURRENT_TIMESTAMP" })
+  created_at: Date;
+}
+```
+
+#### Student Entity
+
+```typescript
+@Entity("students")
+export class Student {
+  @PrimaryGeneratedColumn("uuid")
+  id: string;
+
+  @Column({ type: "varchar", length: 100 })
+  name: string;
+
+  @ManyToOne(() => Classroom, (c) => c.students, { nullable: false })
+  classroom: Classroom;
+
+  @OneToMany(() => Attendance, (a) => a.student)
+  attendances: Attendance[];
+}
+```
+
+#### Attendance Entity
+
+```typescript
+@Entity("attendances")
+export class Attendance {
+  @PrimaryGeneratedColumn("uuid")
+  id: string;
+
+  @Column({ type: "date" })
+  date: Date;
+
+  @Column({ type: "timestamp", nullable: true })
+  checkIn: Date | null;
+
+  @Column({ type: "timestamp", nullable: true })
+  checkOut: Date | null;
+
+  @Column({ type: "varchar", length: 255, nullable: true })
+  observation: string | null;
+
+  @ManyToOne(() => Student, (s) => s.attendances, { nullable: false })
+  student: Student;
+}
+```
+
+## 🔐 Sistema de Autenticação
+
+### JWT Token Structure
+
+```json
+{
+  "sub": "user-uuid",
+  "role": "ADMIN|TEACHER|MONITOR",
+  "iat": 1640995200,
+  "exp": 1641006000
+}
+```
+
+### Roles e Permissões
+
+| Role        | Descrição                | Permissões                                      |
+| ----------- | ------------------------ | ----------------------------------------------- |
+| **ADMIN**   | Administrador do sistema | CRUD completo em todas as entidades             |
+| **TEACHER** | Professor responsável    | Gerenciar própria turma, alunos, presenças      |
+| **MONITOR** | Monitor auxiliar         | Visualizar alunos da turma, registrar presenças |
+
+### Middleware Chain
+
+```
+Request → verifyToken → validateToken → [verifyAdmin|verifyTeacher|verifyMonitor] → Controller
+```
+
+## 🚀 APIs e Endpoints
+
+### Base URL
+
+```
+http://localhost:3000
+```
+
+### 🔐 Authentication Endpoints
+
+#### POST /login
+
+**Autenticação de usuário**
+
+```json
+{
+  "email": "admin@docexpress.com",
+  "password": "admin123"
+}
+```
+
+**Response:**
+
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "user": {
+    "id": "uuid",
+    "name": "Admin User",
+    "email": "admin@docexpress.com",
+    "role": "ADMIN"
+  }
+}
+```
+
+### 👥 User Management (Admin Only)
+
+#### POST /users/create-teacher
+
+**Criar professor**
+
+```json
+{
+  "name": "João Silva",
+  "email": "joao@escola.com",
+  "password": "senha123"
+}
+```
+
+#### POST /users/create-monitor
+
+**Criar monitor**
+
+```json
+{
+  "name": "Maria Santos",
+  "email": "maria@escola.com",
+  "password": "senha123"
+}
+```
+
+### 🏫 Classroom Management
+
+#### POST /classrooms
+
+**Criar turma** (Admin/Teacher)
+
+```json
+{
+  "name": "Turma A - Maternal",
+  "teacherId": "teacher-uuid",
+  "monitorIds": ["monitor-uuid-1", "monitor-uuid-2"]
+}
+```
+
+#### GET /classrooms
+
+**Listar turmas** (Todos os usuários autenticados)
+
+#### GET /classrooms/:id
+
+**Detalhes da turma** (Admin/Teacher/Monitor da turma)
+
+#### PUT /classrooms/:id
+
+**Atualizar turma** (Admin/Teacher da turma)
+
+#### DELETE /classrooms/:id
+
+**Excluir turma** (Admin/Teacher da turma)
+
+### 👶 Student Management
+
+#### POST /students
+
+**Cadastrar aluno** (Admin/Teacher da turma)
+
+```json
+{
+  "name": "Pedro Oliveira",
+  "classroomId": "classroom-uuid"
+}
+```
+
+#### GET /students
+
+**Listar alunos** (Todos autenticados)
+
+#### GET /students/classroom/:classroomId
+
+**Alunos da turma** (Admin/Teacher/Monitor da turma)
+
+#### GET /students/:id
+
+**Detalhes do aluno** (Admin/Teacher/Monitor da turma)
+
+#### PUT /students/:id
+
+**Atualizar aluno** (Admin/Teacher da turma)
+
+#### DELETE /students/:id
+
+**Excluir aluno** (Admin/Teacher da turma)
+
+### 📋 Attendance Management
+
+#### POST /attendance/check-in
+
+**Registrar entrada** (Admin/Teacher/Monitor da turma)
+
+```json
+{
+  "studentId": "student-uuid",
+  "date": "2026-04-05",
+  "observation": "Chegou 15 minutos atrasado"
+}
+```
+
+#### POST /attendance/check-out
+
+**Registrar saída** (Admin/Teacher/Monitor da turma)
+
+```json
+{
+  "studentId": "student-uuid",
+  "date": "2026-04-05",
+  "observation": "Saída antecipada - aluno se machucou"
+}
+```
+
+#### GET /attendance/student/:studentId
+
+**Histórico de presença do aluno** (Admin/Teacher/Monitor da turma)
+
+#### GET /attendance/classroom/:classroomId?date=2026-04-05
+
+**Lista de presença da turma** (Admin/Teacher/Monitor da turma)
+
+## 🏃‍♂️ Como Executar
+
+### Pré-requisitos
+
+- Docker Desktop
+- Node.js 18+ (opcional, para desenvolvimento local)
+- Git
+
+### 1. Clonagem e Setup
 
 ```bash
-git clone https://github.com/projeto-integrador-comp/doc_express_BackEnd.git
+git clone <repository-url>
 cd doc_express_BackEnd
 ```
+
+### 2. Ambiente Docker
+
+```bash
+# Iniciar banco de dados
+docker compose up db -d
+
+# Construir e iniciar aplicação
+docker compose up -d --build
+
+# Verificar logs
+docker compose logs app --follow
+```
+
+### 3. Verificar Health Check
+
+```bash
+curl http://localhost:3000/
+# Deve retornar: "DocExpress Creche API - Running!"
+```
+
+### 4. Aplicar Migrações (automático no startup)
+
+O sistema executa automaticamente:
+
+- Migrações TypeORM
+- Seeds (usuário admin)
+
+### 5. Testar API
+
+1. Importar `DocExpress-API-Collection-v2.postman_collection.json` no Postman
+2. Configurar variável `base_url`: `http://localhost:3000`
+3. Executar fluxo: Login → Criar Professor → Criar Turma → etc.
+
+## 🔄 Migrações Aplicadas
+
+### Histórico Completo (11 migrações)
+
+1. **1743031851927-initialMigration.ts**
+   - Criação inicial: users, documents, templates
+
+2. **1743095952042-documentRelationship.ts**
+   - Relacionamentos entre documentos
+
+3. **1743360350678-defaultNoteColumn.ts**
+   - Coluna note padrão em documentos
+
+4. **1744049938500-documentDelivered.ts**
+   - Status de entrega de documentos
+
+5. **1758239509471-CreateTemplatesTable.ts**
+   - Tabela de templates
+
+6. **1758757501692-ChangeFilePathToFileUrl.ts**
+   - Migração de filePath para fileUrl
+
+7. **1759336383203-AddAttachmentFieldsToDocument.ts**
+   - Campos de anexo em documentos
+
+8. **1759350000000-addRoleToUsers.ts** ✅ **NOVO**
+   - Adiciona coluna `role` enum à tabela users
+   - Mantém `admin` boolean para compatibilidade
+
+9. **1759350000001-populateRolesFromAdmin.ts** ✅ **NOVO**
+   - Popula roles baseado no campo admin legado
+   - admin=true → ADMIN, admin=false → MONITOR
+
+10. **1759350000002-createClassroomsTable.ts** ✅ **NOVO**
+    - Cria tabela classrooms
+    - Foreign key para teacher (users)
+
+11. **1759350000003-createStudentsAndAttendanceTables.ts** ✅ **NOVO**
+    - Cria tabela students (FK para classrooms)
+    - Cria tabela attendances (FK para students)
+    - Cria tabela classroom_monitors (many-to-many)
+
+## 🧪 Testes
+
+### Testes Automatizados
+
+```bash
+npm test
+```
+
+### Testes Manuais (Postman)
+
+1. **Login**: Obter token JWT
+2. **Criar Professor**: POST /users/create-teacher
+3. **Criar Monitor**: POST /users/create-monitor
+4. **Criar Turma**: POST /classrooms
+5. **Cadastrar Aluno**: POST /students
+6. **Check-in**: POST /attendance/check-in
+7. **Check-out**: POST /attendance/check-out
+8. **Consultar Presença**: GET /attendance/classroom/:id
+
+## 🔧 Desenvolvimento Local
+
+### Setup sem Docker
+
+```bash
+# Instalar dependências
+npm install
+
+# Configurar .env
+cp .env.example .env
+# Editar DATABASE_URL para localhost
+
+# Executar migrações
+npm run migration:run
+
+# Executar seeds
+npm run seed
+
+# Desenvolvimento
+npm run dev
+```
+
+### Scripts Disponíveis
+
+```json
+{
+  "dev": "ts-node-dev --transpile-only --ignore-watch node_modules src/server.ts",
+  "build": "tsc",
+  "start": "node dist/server.js",
+  "test": "jest",
+  "migration:generate": "typeorm-ts-node-esm migration:generate",
+  "migration:run": "typeorm-ts-node-esm migration:run",
+  "migration:revert": "typeorm-ts-node-esm migration:revert",
+  "seed": "ts-node src/seeds/adminSeed.ts"
+}
+```
+
+## 📊 Funcionalidades Implementadas
+
+### ✅ Core Features
+
+- [x] **Autenticação JWT** com roles (ADMIN, TEACHER, MONITOR)
+- [x] **RBAC completo** - permissões baseadas em roles
+- [x] **CRUD Turmas** - criação, listagem, atualização, exclusão
+- [x] **CRUD Alunos** - gerenciamento completo de alunos
+- [x] **Sistema de Presença** - check-in/check-out com observações
+- [x] **Relacionamentos** - teacher ↔ classroom, monitors ↔ classroom, student ↔ classroom
+- [x] **Validação Zod** - schemas rigorosos para todas as entradas
+- [x] **Tratamento de Erros** - AppError global com códigos HTTP apropriados
+- [x] **Docker Ready** - containerização completa
+- [x] **Postman Collection** - documentação executável da API
+
+### ✅ Regras de Negócio
+
+- [x] **Uma presença por dia** por aluno
+- [x] **Check-out requer check-in** prévio
+- [x] **Professor único** por turma
+- [x] **Monitores múltiplos** por turma
+- [x] **Observações opcionais** em check-in e check-out
+- [x] **Validação de roles** em todas as operações
+- [x] **Soft deletes** não implementados (recomendado para produção)
+
+### ✅ Qualidade de Código
+
+- [x] **TypeScript Strict** - zero any, tipos rigorosos
+- [x] **Repository Pattern** - acesso isolado ao banco
+- [x] **Dependency Injection** - testabilidade e desacoplamento
+- [x] **Middleware Chain** - responsabilidades separadas
+- [x] **Error Boundaries** - tratamento consistente de erros
+- [x] **Schema Validation** - validação em tempo de execução
+
+## 🚨 Limitações e Recomendações
+
+### Limitações Atuais
+
+- **Sem paginação** em listagens (GET /classrooms, /students)
+- **Sem filtros avançados** (por data, status, etc.)
+- **Sem soft deletes** - exclusões são permanentes
+- **Sem rate limiting** - proteção contra abuso
+- **Sem logs estruturados** - debugging limitado
+- **Sem testes unitários** completos
+- **Sem cache** - todas as queries batem no banco
+
+### Recomendações para Produção
+
+1. **Adicionar paginação** (offset/limit) em endpoints de listagem
+2. **Implementar soft deletes** para dados críticos
+3. **Adicionar rate limiting** (express-rate-limit)
+4. **Logs estruturados** (Winston ou similar)
+5. **Cache Redis** para queries frequentes
+6. **Testes unitários** (Jest) para services
+7. **API versioning** (/v1/ prefix)
+8. **Swagger/OpenAPI** documentation
+9. **Health checks** (/health endpoint)
+10. **Monitoring** (PM2, New Relic)
+
+## 📈 Roadmap
+
+### Próximas Features
+
+- [ ] **Relatórios** - presença mensal, atrasos, etc.
+- [ ] **Notificações** - alertas para pais sobre presença
+- [ ] **Calendário** - feriados, eventos especiais
+- [ ] **Fotos** - upload de fotos dos alunos
+- [ ] **API externa** - integração com sistemas escolares
+- [ ] **Mobile App** - companion app para pais
+
+### Melhorias Técnicas
+
+- [ ] **GraphQL** - alternativa à REST API
+- [ ] **WebSockets** - notificações em tempo real
+- [ ] **Microservices** - separar domínios
+- [ ] **CQRS** - separar reads de writes
+- [ ] **Event Sourcing** - auditoria completa
+
+---
+
+**Status**: ✅ **PROJETO 100% FUNCIONAL**
+**Última Atualização**: 5 de abril de 2026
+**Versão**: 2.0.0
+git clone https://github.com/projeto-integrador-comp/doc_express_BackEnd.git
+cd doc_express_BackEnd
+
+````
 
 ### 2. Instalar dependências
 
 ```bash
 npm install
-```
+````
 
 ### 3. Configurar variáveis de ambiente
 

@@ -29,12 +29,12 @@ export class LoginService {
     }
 
     const token: string = sign(
-      { admin: foundUser.admin },
+      { role: foundUser.role },
       process.env.SECRET_KEY!,
       {
         subject: foundUser.id,
         expiresIn: "3h",
-      }
+      },
     );
     const content = {
       statusCode: 200,

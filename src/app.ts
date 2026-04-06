@@ -8,6 +8,9 @@ import { handleAppError } from "./middlewares/handleAppError.middleware";
 import { profileRouter } from "./routes/profile.route";
 import { documentRouter } from "./routes/document.route";
 import templateRouter from "./routes/template.route";
+import { classroomRouter } from "./routes/classroom.route";
+import { studentRouter } from "./routes/student.route";
+import { attendanceRouter } from "./routes/attendance.route";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
 const app: Application = express();
@@ -21,7 +24,7 @@ function getSupabaseClient(): SupabaseClient | null {
 
   if (!url || !anonKey) {
     console.warn(
-      "⚠️ Supabase não configurado. Conexões reais não funcionarão."
+      "⚠️ Supabase não configurado. Conexões reais não funcionarão.",
     );
     return null;
   }
@@ -43,7 +46,7 @@ app.use(
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "Accept"],
-  })
+  }),
 );
 
 // -------------------------
@@ -102,6 +105,9 @@ app.use("/login", loginRouter);
 app.use("/profile", profileRouter);
 app.use("/documents", documentRouter);
 app.use("/templates", templateRouter);
+app.use("/classrooms", classroomRouter);
+app.use("/students", studentRouter);
+app.use("/attendance", attendanceRouter);
 
 // -------------------------
 // Tratamento de erros

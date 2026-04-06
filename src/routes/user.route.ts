@@ -5,7 +5,7 @@ import { userCreateSchema, userUpdateSchema } from "../schemas/user.schema";
 import { verifyEmail } from "../middlewares/verifyEmail.middleware";
 import { verifyToken } from "../middlewares/verifyToken.middleware";
 import { validateToken } from "../middlewares/validatetoken.middleware";
-import { verifyAdimn } from "../middlewares/verifyAdimin.middleware";
+import { verifyAdmin } from "../middlewares/verifyAdmin.middleware";
 import { verifyId } from "../middlewares/verifyId.middleware";
 import { verifyPermissions } from "../middlewares/verifyPermissions.middleware";
 
@@ -17,16 +17,40 @@ userRouter.post(
   verifyEmail,
   (req: Request, res: Response) => {
     userController.create(req, res);
-  }
+  },
 );
+userRouter.post(
+  "/create-teacher",
+  validateBody(userCreateSchema),
+  verifyToken,
+  validateToken,
+  verifyAdmin,
+  verifyEmail,
+  (req: Request, res: Response) => {
+    userController.createTeacher(req, res);
+  },
+);
+
+userRouter.post(
+  "/create-monitor",
+  validateBody(userCreateSchema),
+  verifyToken,
+  validateToken,
+  verifyAdmin,
+  verifyEmail,
+  (req: Request, res: Response) => {
+    userController.createMonitor(req, res);
+  },
+);
+
 userRouter.get(
   "/",
   verifyToken,
   validateToken,
-  verifyAdimn,
+  verifyAdmin,
   (req: Request, res: Response) => {
     userController.read(req, res);
-  }
+  },
 );
 
 userRouter.use("/:id", verifyToken, validateToken, verifyId, verifyPermissions);
@@ -39,7 +63,7 @@ userRouter.patch(
   verifyEmail,
   (req: Request, res: Response) => {
     userController.update(req, res);
-  }
+  },
 );
 userRouter.delete("/:id", (req: Request, res: Response) => {
   userController.remove(req, res);

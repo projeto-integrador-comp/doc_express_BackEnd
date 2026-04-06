@@ -1,4 +1,4 @@
-import { User } from "../entities/user.entity";
+import { User, Role } from "../entities/user.entity";
 import {
   TUserCreate,
   TUserList,
@@ -7,6 +7,7 @@ import {
 } from "../interfaces/user.interface";
 import { userRepository } from "../repositories";
 import { userListSchema, userReturnSchema } from "../schemas/user.schema";
+import { AppError } from "../errors/AppError.error";
 
 export class UserService {
   async create(data: TUserCreate): Promise<TUserReturn> {
@@ -34,5 +35,39 @@ export class UserService {
 
   async remove(user: User): Promise<void> {
     await userRepository.remove(user);
+  }
+
+  async createTeacher(data: Omit<TUserCreate, "role">): Promise<TUserReturn> {
+    const existingUser = await userRepository.findOne({
+      where: { email: data.email },
+    });
+    if (existingUser) {
+      throw new AppError("Email already registered.", 409);
+    }
+
+    const newUser = userRepository.create({
+      ...data,
+      role: Role.TEACHER,
+    });
+    await userRepository.save(newUser);
+
+    return userReturnSchema.parse(newUser);
+  }
+
+  async createMonitor(data: Omit<TUserCreate, "role">): Promise<TUserReturn> {
+    const existingUser = await userRepository.findOne({
+      where: { email: data.email },
+    });
+    if (existingUser) {
+      throw new AppError("Email already registered.", 409);
+    }
+
+    const newUser = userRepository.create({
+      ...data,
+      role: Role.MONITOR,
+    });
+    await userRepository.save(newUser);
+
+    return userReturnSchema.parse(newUser);
   }
 }

@@ -31,4 +31,24 @@ export class UserController {
     await this.userService.remove(res.locals.foundUser);
     return res.status(204).json();
   }
+
+  async createTeacher(req: Request, res: Response) {
+    const { name, email, password } = req.body;
+    const newTeacher = await this.userService.createTeacher({
+      name,
+      email,
+      password,
+    });
+    return res.status(201).json(newTeacher);
+  }
+
+  async createMonitor(req: Request, res: Response) {
+    const { name, email, password } = req.body;
+    const newMonitor = await this.userService.createMonitor({
+      name,
+      email,
+      password,
+    });
+    return res.status(201).json(newMonitor);
+  }
 }

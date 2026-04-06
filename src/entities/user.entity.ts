@@ -9,6 +9,12 @@ import {
 } from "typeorm";
 import { Document } from "./document.entity";
 
+export enum Role {
+  ADMIN = "ADMIN",
+  TEACHER = "TEACHER",
+  MONITOR = "MONITOR",
+}
+
 @Entity("users")
 export class User {
   @PrimaryGeneratedColumn("uuid")
@@ -23,8 +29,12 @@ export class User {
   @Column({ length: 120 })
   password: string;
 
-  @Column({ default: false })
-  admin: boolean;
+  @Column({
+    type: "enum",
+    enum: Role,
+    default: Role.MONITOR,
+  })
+  role: Role;
 
   @OneToMany(() => Document, (d) => d.user, {
     onDelete: "CASCADE",

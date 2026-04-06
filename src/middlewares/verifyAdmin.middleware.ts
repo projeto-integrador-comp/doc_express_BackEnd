@@ -4,7 +4,7 @@ import { AppError } from "../errors/AppError.error";
 export const verifyAdmin = (
   req: Request,
   res: Response,
-  next: NextFunction,
+  next: NextFunction
 ) => {
   const { role } = res.locals.decoded;
 

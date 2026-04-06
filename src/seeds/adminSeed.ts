@@ -1,5 +1,5 @@
 import { AppDataSource } from "../data-source";
-import { User } from "../entities/user.entity";
+import { User, Role } from "../entities/user.entity";
 import bcrypt from "bcryptjs";
 
 async function createAdminUser() {
@@ -20,7 +20,7 @@ async function createAdminUser() {
       name: "Administrador",
       email: "admin@docexpress.com",
       password: passwordHash,
-      admin: true,
+      role: Role.ADMIN,
     });
 
     // --------- Upsert: cria ou atualiza se já existir ---------
@@ -29,12 +29,12 @@ async function createAdminUser() {
       .insert()
       .into(User)
       .values(adminUser)
-      .orUpdate(["name", "password", "admin"], ["email"])
+      .orUpdate(["name", "password", "role"], ["email"])
       .execute();
 
     console.log(
       "Usuário administrador criado ou atualizado com sucesso:",
-      adminUser.email
+      adminUser.email,
     );
   } catch (err: any) {
     console.error("❌ Erro ao criar usuário administrador:", err.message);

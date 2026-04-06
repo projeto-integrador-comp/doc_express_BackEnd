@@ -4,11 +4,14 @@ import { userRepository } from "../repositories";
 export const validateToken = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const { sub } = res.locals.decoded;
 
   const foundUser = await userRepository.findOneBy({ id: sub });
   if (!foundUser) throw new AppError("invalid signature", 401);
+
+  res.locals.user = foundUser;
+
   return next();
 };

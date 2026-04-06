@@ -1,11 +1,14 @@
 import { z } from "zod";
+import { Role } from "../entities/user.entity";
+
+const roleEnum = z.enum([Role.ADMIN, Role.TEACHER, Role.MONITOR]);
 
 const userSchema = z.object({
   id: z.string(),
   name: z.string().max(120).min(2),
   email: z.string().max(120).email(),
   password: z.string().max(120),
-  admin: z.boolean().default(false),
+  role: roleEnum.default(Role.MONITOR),
 });
 
 export const userCreateSchema = userSchema.omit({ id: true });
@@ -13,5 +16,5 @@ export const userCreateSchema = userSchema.omit({ id: true });
 export const userReturnSchema = userSchema.omit({ password: true });
 export const userListSchema = userReturnSchema.array();
 
-export const userAdminOmitSchema = userCreateSchema.omit({ admin: true });
-export const userUpdateSchema = userAdminOmitSchema.partial();
+export const userRoleOmitSchema = userCreateSchema.omit({ role: true });
+export const userUpdateSchema = userRoleOmitSchema.partial();
