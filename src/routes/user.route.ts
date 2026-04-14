@@ -4,67 +4,77 @@ import { validateBody } from "../middlewares/validateBody.middleware";
 import { userCreateSchema, userUpdateSchema } from "../schemas/user.schema";
 import { verifyEmail } from "../middlewares/verifyEmail.middleware";
 import { verifyToken } from "../middlewares/verifyToken.middleware";
-import { validateToken } from "../middlewares/validatetoken.middleware";
 import { verifyAdmin } from "../middlewares/verifyAdmin.middleware";
 import { verifyId } from "../middlewares/verifyId.middleware";
 import { verifyPermissions } from "../middlewares/verifyPermissions.middleware";
 
 export const userRouter: Router = Router();
 
+/**
+ * ROTAS ADMINISTRATIVAS (Exclusivas Admin)
+ * Usamos middlewares diretamente nestas rotas para não afetar as rotas de ID abaixo.
+ */
+
+// Listagem de todos os usuários
+userRouter.get(
+  "/", 
+  verifyToken, 
+  verifyAdmin, 
+  (req: Request, res: Response) => {
+    userController.read(req, res);
+  }
+);
+
+// Criação de usuários (Professor, Monitor ou outro Admin)
 userRouter.post(
   "/",
+  verifyToken,
+  verifyAdmin,
   validateBody(userCreateSchema),
   verifyEmail,
   (req: Request, res: Response) => {
     userController.create(req, res);
-  },
-);
-userRouter.post(
-  "/create-teacher",
-  validateBody(userCreateSchema),
-  verifyToken,
-  validateToken,
-  verifyAdmin,
-  verifyEmail,
-  (req: Request, res: Response) => {
-    userController.createTeacher(req, res);
-  },
+  }
 );
 
-userRouter.post(
-  "/create-monitor",
-  validateBody(userCreateSchema),
-  verifyToken,
-  validateToken,
-  verifyAdmin,
-  verifyEmail,
-  (req: Request, res: Response) => {
-    userController.createMonitor(req, res);
-  },
-);
+/**
+ * ROTAS DE RECURSO ESPECÍFICO (/:id)
+ * O verifyPermissions permite o acesso se for ADMIN ou se for o DONO do ID.
+ */
 
+// Busca um usuário específico
 userRouter.get(
-  "/",
-  verifyToken,
-  validateToken,
-  verifyAdmin,
+  "/:id", 
+  verifyToken, 
+  verifyId, 
+  verifyPermissions, 
   (req: Request, res: Response) => {
-    userController.read(req, res);
-  },
+    userController.readOne(req, res);
+  }
 );
 
-userRouter.use("/:id", verifyToken, validateToken, verifyId, verifyPermissions);
-userRouter.get("/:id", (req: Request, res: Response) => {
-  userController.readOne(req, res);
-});
+// Atualização de dados (ex: Senha)
 userRouter.patch(
   "/:id",
+  verifyToken,
+  verifyId,
+  verifyPermissions,
   validateBody(userUpdateSchema),
-  verifyEmail,
+  verifyEmail, 
   (req: Request, res: Response) => {
     userController.update(req, res);
-  },
+  }
 );
-userRouter.delete("/:id", (req: Request, res: Response) => {
-  userController.remove(req, res);
-});
+
+/**
+ * EXCLUSIVO ADMIN: Deleção de Usuários
+ */
+userRouter.delete(
+  "/:id", 
+  verifyToken, 
+  verifyId, 
+  verifyAdmin, 
+  (req: Request, res: Response) => {
+    userController.remove(req, res);
+  }
+);

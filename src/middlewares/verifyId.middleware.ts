@@ -7,10 +7,19 @@ export const verifyId = async (
   res: Response,
   next: NextFunction
 ) => {
-  const { id } = req.params;
+  // Capturamos o id diretamente de req.params
+  const id = req.params.id;
+
+  // 1. CORREÇÃO DO ERRO DE TIPO:
+  // Verificamos se 'id' não é uma string única. Se for undefined ou array, barramos aqui.
+  if (typeof id !== 'string') {
+    throw new AppError("User not found.", 404);
+  }
+
   const uuidRegex =
     /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
 
+  // 2. Agora o TS sabe que 'id' é estritamente uma string
   if (uuidRegex.test(id)) {
     const foundUser = await userRepository.findOneBy({ id });
     if (!foundUser) throw new AppError("User not found.", 404);

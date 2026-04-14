@@ -102,7 +102,13 @@ export class TemplateController {
 
   async readOne(req: Request, res: Response) {
     try {
-      const { id } = req.params;
+      const id = req.params.id;
+
+      // Type Guard para garantir que o ID é uma string única
+      if (typeof id !== 'string') {
+        throw new AppError("ID inválido", 400);
+      }
+
       const template = await this.templateService.readOne(id);
 
       if (!template) {
@@ -120,7 +126,12 @@ export class TemplateController {
 
   async update(req: Request, res: Response) {
     try {
-      const { id } = req.params;
+      const id = req.params.id;
+
+      if (typeof id !== 'string') {
+        throw new AppError("ID inválido", 400);
+      }
+
       const template = await this.templateService.update(id, req.body);
       return res.json(template);
     } catch (error) {
@@ -133,7 +144,12 @@ export class TemplateController {
 
   async remove(req: Request, res: Response) {
     try {
-      const { id } = req.params;
+      const id = req.params.id;
+
+      if (typeof id !== 'string') {
+        throw new AppError("ID inválido", 400);
+      }
+
       await this.templateService.remove(id);
       return res.status(204).json();
     } catch (error) {
@@ -146,7 +162,12 @@ export class TemplateController {
 
   async download(req: Request, res: Response) {
     try {
-      const { id } = req.params;
+      const id = req.params.id;
+
+      if (typeof id !== 'string') {
+        throw new AppError("ID inválido", 400);
+      }
+
       const { buffer, template } = await this.templateService.downloadFile(id);
 
       res.setHeader("Content-Type", template.mimeType);
@@ -170,10 +191,11 @@ export class TemplateController {
       const { q, type } = req.query;
 
       let templates;
-      if (type) {
-        templates = await this.templateService.readByMimeType(type as string);
-      } else if (q) {
-        templates = await this.templateService.search(q as string);
+      // Validação de tipo para parâmetros de query
+      if (type && typeof type === 'string') {
+        templates = await this.templateService.readByMimeType(type);
+      } else if (q && typeof q === 'string') {
+        templates = await this.templateService.search(q);
       } else {
         templates = await this.templateService.read();
       }
