@@ -18,3 +18,4 @@ export const userListSchema = userReturnSchema.array();
 
 export const userRoleOmitSchema = userCreateSchema.omit({ role: true });
 export const userUpdateSchema = userRoleOmitSchema.partial();
+//export const userUpdateSchema = userCreateSchema.partial();

@@ -8,6 +8,14 @@ export const verifyId = async (
   next: NextFunction
 ) => {
   const { id } = req.params;
+
+  // 1. CORREÇÃO DO ERRO DE TIPO:
+ // Verificamos se 'id' não é uma string única. Se for undefined ou array, barramos aqui.
+ if (typeof id !== 'string') {
+   throw new AppError("User not found.", 404);
+ }
+
+ 
   const uuidRegex =
     /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
 
