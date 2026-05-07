@@ -73,10 +73,32 @@ export class ClassroomService {
   }
 
   async update(id: string, payload: TClassroomUpdate): Promise<Classroom> {
+    // 1. Busca a turma existente (já traz as relações via findById)
     const classroom = await this.findById(id);
 
-    if (payload.name) classroom.name = payload.name;
+    // 2. Atualiza o nome se fornecido
+    if (payload.name) {
+      classroom.name = payload.name;
+    }
 
+    // 3. Lógica para atualizar o professor
+    if (payload.teacherId) {
+      const newTeacher = await userRepository.findOneBy({ id: payload.teacherId });
+
+      if (!newTeacher) {
+        throw new AppError("Teacher not found.", 404);
+      }
+
+      // Validação de cargo (seguindo o padrão que você já usa no create)
+      if (newTeacher.role !== Role.TEACHER && newTeacher.role !== Role.ADMIN) {
+        throw new AppError("User must be a teacher or admin to lead a classroom.", 400);
+      }
+
+      // Atribui a nova entidade à relação
+      classroom.teacher = newTeacher;
+    }
+
+    // 4. Salva a turma com o novo vínculo
     await classroomRepository.save(classroom);
 
     return classroom;

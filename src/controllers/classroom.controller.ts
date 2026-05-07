@@ -6,6 +6,7 @@ import {
   classroomCreateSchema,
 } from "../schemas/classroom.schema";
 import { Role } from "../entities/user.entity";
+import { AppError } from "../errors/AppError.error";
 
 const classroomService = new ClassroomService();
 
@@ -29,6 +30,13 @@ export class ClassroomController {
 
   async findById(req: Request, res: Response): Promise<Response> {
     const { id } = req.params;
+
+    // 1. CORREÇÃO DO ERRO DE TIPO:
+ // Verificamos se 'id' não é uma string única. Se for undefined ou array, barramos aqui.
+ if (typeof id !== 'string') {
+   throw new AppError("Classroom not found.", 404);
+ }
+
     const classroom = await classroomService.findById(id);
 
     return res.status(200).json(classroom);
@@ -37,6 +45,12 @@ export class ClassroomController {
   async update(req: Request, res: Response): Promise<Response> {
     const userRole = res.locals.decoded.role;
     const { id } = req.params;
+
+    // 1. CORREÇÃO DO ERRO DE TIPO:
+ // Verificamos se 'id' não é uma string única. Se for undefined ou array, barramos aqui.
+ if (typeof id !== 'string') {
+   throw new AppError("Classroom not found.", 404);
+ }
 
     // Only admin or the teacher of the classroom can update
     const classroom = await classroomService.findById(id);
@@ -58,6 +72,13 @@ export class ClassroomController {
     }
 
     const { id } = req.params;
+
+    // 1. CORREÇÃO DO ERRO DE TIPO:
+ // Verificamos se 'id' não é uma string única. Se for undefined ou array, barramos aqui.
+ if (typeof id !== 'string') {
+   throw new AppError("User not found.", 404);
+ }
+    
     await classroomService.delete(id);
 
     return res.status(204).send();

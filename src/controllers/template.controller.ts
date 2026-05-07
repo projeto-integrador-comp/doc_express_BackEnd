@@ -103,6 +103,13 @@ export class TemplateController {
   async readOne(req: Request, res: Response) {
     try {
       const { id } = req.params;
+
+      // 1. CORREÇÃO DO ERRO DE TIPO:
+ // Verificamos se 'id' não é uma string única. Se for undefined ou array, barramos aqui.
+ if (typeof id !== 'string') {
+   throw new AppError("User not found.", 404);
+ }
+
       const template = await this.templateService.readOne(id);
 
       if (!template) {
@@ -121,6 +128,13 @@ export class TemplateController {
   async update(req: Request, res: Response) {
     try {
       const { id } = req.params;
+
+      // 1. CORREÇÃO DO ERRO DE TIPO:
+ // Verificamos se 'id' não é uma string única. Se for undefined ou array, barramos aqui.
+ if (typeof id !== 'string') {
+   throw new AppError("Student not found.", 404);
+ }
+
       const template = await this.templateService.update(id, req.body);
       return res.json(template);
     } catch (error) {
@@ -134,6 +148,13 @@ export class TemplateController {
   async remove(req: Request, res: Response) {
     try {
       const { id } = req.params;
+
+      // 1. CORREÇÃO DO ERRO DE TIPO:
+ // Verificamos se 'id' não é uma string única. Se for undefined ou array, barramos aqui.
+ if (typeof id !== 'string') {
+   throw new AppError("User not found.", 404);
+ }
+
       await this.templateService.remove(id);
       return res.status(204).json();
     } catch (error) {
@@ -147,6 +168,13 @@ export class TemplateController {
   async download(req: Request, res: Response) {
     try {
       const { id } = req.params;
+
+      // 1. CORREÇÃO DO ERRO DE TIPO:
+ // Verificamos se 'id' não é uma string única. Se for undefined ou array, barramos aqui.
+ if (typeof id !== 'string') {
+   throw new AppError("Student not found.", 404);
+ }
+ 
       const { buffer, template } = await this.templateService.downloadFile(id);
 
       res.setHeader("Content-Type", template.mimeType);

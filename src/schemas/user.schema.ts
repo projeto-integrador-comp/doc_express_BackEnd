@@ -16,5 +16,6 @@ export const userCreateSchema = userSchema.omit({ id: true });
 export const userReturnSchema = userSchema.omit({ password: true });
 export const userListSchema = userReturnSchema.array();
 
-export const userRoleOmitSchema = userCreateSchema.omit({ role: true });
-export const userUpdateSchema = userRoleOmitSchema.partial();
+//export const userRoleOmitSchema = userCreateSchema.omit({ role: true });
+// Remova o omit({ role: true }) para permitir que o cargo seja editado
+export const userUpdateSchema = userCreateSchema.partial();

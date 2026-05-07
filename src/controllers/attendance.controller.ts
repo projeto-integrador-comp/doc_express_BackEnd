@@ -4,6 +4,7 @@ import {
   attendanceCheckInSchema,
   attendanceCheckOutSchema,
 } from "../schemas/attendance.schema";
+import { AppError } from "../errors/AppError.error";
 
 const attendanceService = new AttendanceService();
 
@@ -24,6 +25,14 @@ export class AttendanceController {
 
   async getByStudent(req: Request, res: Response): Promise<Response> {
     const { studentId } = req.params;
+
+    // 1. CORREÇÃO DO ERRO DE TIPO:
+ // Verificamos se 'id' não é uma string única. Se for undefined ou array, barramos aqui.
+ if (typeof studentId !== 'string') {
+   throw new AppError("Student not found.", 404);
+ }
+
+
     const attendances = await attendanceService.getByStudent(studentId);
 
     return res.status(200).json(attendances);
@@ -31,6 +40,14 @@ export class AttendanceController {
 
   async getByClassroom(req: Request, res: Response): Promise<Response> {
     const { classroomId } = req.params;
+
+    // 1. CORREÇÃO DO ERRO DE TIPO:
+ // Verificamos se 'id' não é uma string única. Se for undefined ou array, barramos aqui.
+ if (typeof classroomId !== 'string') {
+   throw new AppError("Classroom ID isnot found.", 404);
+ }
+
+
     const { date } = req.query;
 
     if (!date || typeof date !== "string") {
