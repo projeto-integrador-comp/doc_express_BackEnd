@@ -8,7 +8,7 @@ import {
 } from "../interfaces/attendance.interface";
 
 export class AttendanceService {
-  async checkIn(payload: TAttendanceCheckIn): Promise<Attendance> {
+  async checkIn(payload: TAttendanceCheckIn | any): Promise<Attendance> {
     const student = await studentRepository.findOne({
       where: { id: payload.studentId },
     });
@@ -19,40 +19,40 @@ export class AttendanceService {
 
     const dateObj = new Date(payload.date);
 
-    // Check if there's already a check-in for this date
-    const existingAttendance = await attendanceRepository.findOne({
+    
+    let attendance = await attendanceRepository.findOne({
       where: {
         student: { id: payload.studentId },
         date: dateObj,
       },
     });
 
-    if (existingAttendance && existingAttendance.checkIn) {
-      throw new AppError("Student already checked in today.", 400);
-    }
-
-    let attendance: Attendance;
-
-    if (existingAttendance) {
-      attendance = existingAttendance;
-      attendance.checkIn = new Date();
-    } else {
+    if (!attendance) {
+      
       attendance = attendanceRepository.create({
         student,
         date: dateObj,
-        checkIn: new Date(),
       });
     }
 
-    if (payload.observation) {
-      attendance.observation = payload.observation;
+    
+    attendance.status = payload.status; 
+    attendance.observation = payload.observation || "";
+
+    
+    if (payload.status === 'F') {
+      
+      attendance.checkIn = null;
+      attendance.checkOut = null;
+    } else {      
+      attendance.checkIn = payload.checkIn ? new Date(payload.checkIn) : new Date();
     }
 
     await attendanceRepository.save(attendance);
     return attendance;
   }
 
-  async checkOut(payload: TAttendanceCheckOut): Promise<Attendance> {
+  async checkOut(payload: TAttendanceCheckOut | any): Promise<Attendance> {
     const student = await studentRepository.findOne({
       where: { id: payload.studentId },
     });
@@ -61,7 +61,7 @@ export class AttendanceService {
       throw new AppError("Student not found.", 404);
     }
 
-    const dateObj = new Date(payload.date);
+    const dateObj = payload.date;
 
     const attendance = await attendanceRepository.findOne({
       where: {
@@ -71,19 +71,18 @@ export class AttendanceService {
     });
 
     if (!attendance) {
-      throw new AppError("Attendance record not found.", 404);
+      throw new AppError("Attendance record not found for this date.", 404);
     }
 
-    if (!attendance.checkIn) {
-      throw new AppError("Cannot check out without check in.", 400);
+    
+    if (attendance.status === 'F') {
+      throw new AppError("Cannot check-out a student marked as absent.", 400);
     }
 
-    if (attendance.checkOut) {
-      throw new AppError("Student already checked out today.", 400);
-    }
-
-    attendance.checkOut = new Date();
-    if (payload.observation) {
+    
+    attendance.checkOut = payload.checkOut ? new Date(payload.checkOut) : new Date();
+    
+    if (payload.observation !== undefined) {
       attendance.observation = payload.observation;
     }
 
@@ -95,11 +94,11 @@ export class AttendanceService {
     return await attendanceRepository.find({
       where: { student: { id: studentId } },
       relations: ["student"],
+      order: { date: "DESC" } 
     });
   }
 
   async getByClassroom(classroomId: string, date: Date): Promise<Attendance[]> {
-    // Get all students in classroom
     const students = await studentRepository.find({
       where: { classroom: { id: classroomId } },
     });
