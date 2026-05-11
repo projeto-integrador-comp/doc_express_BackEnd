@@ -20,4 +20,7 @@ export class Attendance {
 
   @Column({ type: "varchar", length: 255, nullable: true })
   observation: string | null;
+
+  @Column({ type: "varchar", length: 1, nullable: true })
+  status: string;
 }
