@@ -17,28 +17,27 @@ export class AttendanceService {
       throw new AppError("Student not found.", 404);
     }
 
-    
-    const dateStr = typeof payload.date === 'string' ? payload.date.split('T')[0] : payload.date;
+    const dateObj = new Date(payload.date);
 
     
     let attendance = await attendanceRepository.findOne({
       where: {
         student: { id: payload.studentId },
-        date: dateStr as any, 
+        date: dateObj,
       },
     });
 
-    
     if (!attendance) {
+      
       attendance = attendanceRepository.create({
         student,
-        date: dateStr,
+        date: dateObj,
       });
     }
 
     
     attendance.status = payload.status; 
-    attendance.observation = payload.observation || attendance.observation || "";
+    attendance.observation = payload.observation || "";
 
     
     if (payload.status === 'F') {
@@ -46,11 +45,9 @@ export class AttendanceService {
       attendance.checkIn = null;
       attendance.checkOut = null;
     } else {      
-      
-      attendance.checkIn = payload.checkIn ? new Date(payload.checkIn) : (attendance.checkIn || new Date());
+      attendance.checkIn = payload.checkIn ? new Date(payload.checkIn) : new Date();
     }
 
-    
     await attendanceRepository.save(attendance);
     return attendance;
   }
@@ -64,20 +61,20 @@ export class AttendanceService {
       throw new AppError("Student not found.", 404);
     }
 
-    
-    const dateStr = typeof payload.date === 'string' ? payload.date.split('T')[0] : payload.date;
+    const dateObj = payload.date;
 
     const attendance = await attendanceRepository.findOne({
       where: {
         student: { id: payload.studentId },
-        date: dateStr as any,
+        date: dateObj,
       },
     });
 
     if (!attendance) {
-      throw new AppError("Attendance record not found for this date. Register check-in first.", 404);
+      throw new AppError("Attendance record not found for this date.", 404);
     }
 
+    
     if (attendance.status === 'F') {
       throw new AppError("Cannot check-out a student marked as absent.", 400);
     }
@@ -112,7 +109,7 @@ export class AttendanceService {
       return [];
     }
 
-    const formattedDate = typeof date === 'string' ? date : date.toISOString().split("T")[0];
+    const formattedDate = date.toISOString().split("T")[0];
 
     return await attendanceRepository
       .createQueryBuilder("attendance")
